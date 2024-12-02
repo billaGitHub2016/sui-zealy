@@ -20,7 +20,7 @@ export default function TaskSubmissionDialog() {
       <DialogTrigger asChild>
         <Button>创建新任务</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[70vw] sm:max-h-[90vh]">
+      <DialogContent className="sm:max-w-[70vw] sm:max-h-[90vh]" onPointerDownOutside={(event) => {event.preventDefault()}}>
         <DialogHeader>
           <DialogTitle>创建新任务</DialogTitle>
           {/* <DialogDescription>

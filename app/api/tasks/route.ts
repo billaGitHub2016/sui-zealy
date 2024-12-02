@@ -54,7 +54,7 @@ export async function PUT(request: Request) {
 
 export async function GET(request: Request) {
     try {
-        console.log('get req = ', request)
+        // console.log('get req = ', request)
         const supabase = createRouteHandlerClient({ cookies });
 
         let { data: tasks, error } = await supabase

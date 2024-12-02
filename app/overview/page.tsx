@@ -7,7 +7,6 @@ import TaskList from '@/components/TaskList'
 import { Suspense } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 
-
 export const dynamic = "force-dynamic";
 
 export default async function Index() {
@@ -31,7 +30,7 @@ export default async function Index() {
   //   .eq("user_id", user.id);
 
   // return <ClientSideModelsList serverModels={models ?? []} />;
-
+  
   return (
     <div className="container mx-auto px-4 py-8">
       <TaskSubmissionDialog />
