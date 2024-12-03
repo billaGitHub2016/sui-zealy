@@ -3,7 +3,7 @@
 import * as React from "react"
 import { addDays, format } from "date-fns"
 import { CalendarIcon } from 'lucide-react'
-import { DateRange } from "react-day-picker"
+import { DateRange, Matcher } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -20,10 +20,12 @@ export function DateRangePicker({
   className,
   value,
   onChange,
+  disabled
 }: {
   className?: string
   value: DateRange | undefined
   onChange: (value: DateRange | undefined) => void
+  disabled?: Matcher
 }) {
   return (
     <div className={cn("grid gap-2 max-w-sm", className)}>
@@ -62,6 +64,7 @@ export function DateRangePicker({
               numberOfMonths={2}
               className="sm:pr-4"
               locale={zhCN}
+              disabled={disabled}
             />
           </div>
         </PopoverContent>

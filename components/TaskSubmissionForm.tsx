@@ -14,7 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { DateRangePicker } from "@/components/date-range-picker"
+import { DateRangePicker } from "@/components/date-range-picker";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
@@ -22,12 +22,15 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DateBefore } from "react-day-picker";
+
+const SUI_MIST = 10000000000;
 
 const formSchema = z.object({
   name: z.string().min(2, {
     message: "任务名称至少需要2个字符。",
   }),
-  description: z.string().min(1, {
+  desc: z.string().min(1, {
     message: "任务描述至少需要10个字符。",
   }),
   reward_method: z.number(),
@@ -36,10 +39,17 @@ const formSchema = z.object({
   claim_limit: z.number().int().min(1, {
     message: "至少发放1个奖励。",
   }),
-  dateRange: z.object({
-    from: z.date(),
-    to: z.date(),
-  }),
+  dateRange: z
+    .object({
+      from: z.date(),
+      to: z.date(),
+    }),
+    // .refine(
+    //   (date) => {
+    //     return date.from > new Date() && date.to > new Date();
+    //   },
+    //   { messge: "开始和结束日期必须晚于当前日期" }
+    // ),
   attachment: z
     .array(z.instanceof(File))
     .refine((files) => files.length > 0, "请至少上传一个图片附件。"),
@@ -56,12 +66,12 @@ export function TaskSubmissionForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      name: "test",
+      desc: "test desc",
       reward_method: 1,
       claim_limit: 1,
-      one_pass_reward: 0,
-      pool: 0,
-      description: "",
+      one_pass_reward: 1,
+      pool: 1,
       dateRange: {
         from: new Date(),
         to: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to 7 days from now
@@ -82,7 +92,12 @@ export function TaskSubmissionForm({
     try {
       const formData = new FormData();
       formData.append("name", values.name);
-      formData.append("description", values.description);
+      formData.append("desc", values.desc);
+      formData.append("reward_method", values.reward_method + '');
+      formData.append("claim_limit", values.claim_limit + '');
+      formData.append("pool", values.pool * SUI_MIST + '');
+      formData.append("start_date", values.dateRange.from.toISOString().toLocaleString());
+      formData.append("end_date", values.dateRange.to.toISOString().toLocaleString());
       values.attachment.forEach((file, index) => {
         formData.append(`attachment${index}`, file);
       });
@@ -107,10 +122,13 @@ export function TaskSubmissionForm({
         description: "创建任务时出现错误,请稍后重试。",
         variant: "destructive",
       });
+      console.error('提交失败', error);
     } finally {
       setIsSubmitting(false);
     }
   }
+
+  const beforeMatcher: DateBefore = { before: new Date() };
 
   return (
     <Form {...form}>
@@ -133,34 +151,7 @@ export function TaskSubmissionForm({
         />
         <FormField
           control={form.control}
-          name="dateRange"
-          render={({ field }) => (
-            <FormItem className="grid sm:grid-cols-4 gap-4 items-start">
-              <FormLabel className="sm:text-right pt-2">任务时间范围</FormLabel>
-              <div className="sm:col-span-3">
-                <FormControl>
-                  <DateRangePicker
-                    value={field.value}
-                    onChange={(value) => {
-                      console.log('日期change~~~~~~~~~~~', value);
-                      debugger
-                      if (value?.from && value?.to) {
-                        field.onChange(value);
-                      }
-                    }}
-                  />
-                </FormControl>
-                <FormDescription className="mt-1">
-                  选择任务的开始和结束日期。
-                </FormDescription>
-                <FormMessage />
-              </div>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
+          name="desc"
           render={({ field }) => (
             <FormItem>
               <FormLabel>任务描述</FormLabel>
@@ -274,7 +265,37 @@ export function TaskSubmissionForm({
             </FormItem>
           )}
         />
-        {/* <FormField
+
+        <FormField
+          control={form.control}
+          name="dateRange"
+          render={({ field }) => (
+            <FormItem className="grid sm:grid-cols-4 gap-4 items-start">
+              <FormLabel className="sm:text-right pt-2">任务时间范围</FormLabel>
+              <div className="sm:col-span-3">
+                <FormControl>
+                  <DateRangePicker
+                    value={field.value}
+                    onChange={(value) => {
+                      console.log("日期change~~~~~~~~~~~", value);
+                      debugger;
+                      if (value?.from && value?.to) {
+                        field.onChange(value);
+                      }
+                    }}
+                    disabled={beforeMatcher}
+                  />
+                </FormControl>
+                <FormDescription className="mt-1">
+                  选择任务的开始和结束日期。
+                </FormDescription>
+                <FormMessage />
+              </div>
+            </FormItem>
+          )}
+        />
+
+        <FormField
           control={form.control}
           name="attachment"
           render={({ field: { onChange, value, ...rest } }) => (
@@ -332,9 +353,8 @@ export function TaskSubmissionForm({
               <FormMessage />
             </FormItem>
           )}
-        /> */}
+        />
 
-        
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "提交中..." : "提交任务"}
         </Button>
