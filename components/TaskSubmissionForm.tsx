@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState, Ref } from "react";
 import { ControllerRenderProps, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,8 +23,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DateBefore } from "react-day-picker";
+import { Task } from "@/types/task";
 
-const SUI_MIST = 10000000000;
+const SUI_MIST = 1000000000;
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -44,24 +45,51 @@ const formSchema = z.object({
       from: z.date(),
       to: z.date(),
     }),
-    // .refine(
-    //   (date) => {
-    //     return date.from > new Date() && date.to > new Date();
-    //   },
-    //   { messge: "开始和结束日期必须晚于当前日期" }
-    // ),
+  // .refine(
+  //   (date) => {
+  //     return date.from > new Date() && date.to > new Date();
+  //   },
+  //   { messge: "开始和结束日期必须晚于当前日期" }
+  // ),
   attachment: z
     .array(z.instanceof(File))
     .refine((files) => files.length > 0, "请至少上传一个图片附件。"),
 });
 
-export function TaskSubmissionForm({
+const TaskSubmissionForm = ({
   onSubmitSuccess,
+  task
 }: {
   onSubmitSuccess: () => void;
-}) {
+  task?: Task | null
+}, ref: Ref<{
+  onSubmit: Function
+}>) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
+
+  useImperativeHandle(ref, () => ({
+    onSubmit
+  }));
+
+  useEffect(() => {
+    if (task) {
+      form.setValue('name', task.name as string)
+      form.setValue('desc', task.desc as string)
+      form.setValue('reward_method', task.reward_method as number)
+      form.setValue('claim_limit', task.claim_limit as number)
+      form.setValue('pool', task.pool as number / SUI_MIST)
+      if (task.reward_method === 1) {
+        form.setValue('one_pass_reward', (task.pool as number / SUI_MIST) / (task.claim_limit as number))
+      }
+      debugger
+      form.setValue('dateRange', {
+        from: new Date(task.start_date as string),
+        to: new Date(task.end_date as string)
+      })
+      setPreviews(task.attachments as Array<string>)
+    }
+  }, [task])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -87,9 +115,27 @@ export function TaskSubmissionForm({
     form.setValue("pool", claimLimit * onePassReward);
   }, [onePassReward, claimLimit, form]);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit() {
     setIsSubmitting(true);
     try {
+      const validateResult = await new Promise((resolve) => {
+        form.handleSubmit(() => {
+          resolve(true)
+        }, (error) => {
+          resolve(false)
+          const keys = Object.keys(error)
+          toast({
+            title: "校验失败",
+            description: error[keys[0]]?.message,
+            variant: "destructive",
+          });
+        })();
+      })
+      if (!validateResult) {
+        return;
+      }
+
+      const values = form.getValues();
       const formData = new FormData();
       formData.append("name", values.name);
       formData.append("desc", values.desc);
@@ -355,10 +401,12 @@ export function TaskSubmissionForm({
           )}
         />
 
-        <Button type="submit" disabled={isSubmitting}>
+        {/* <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "提交中..." : "提交任务"}
-        </Button>
+        </Button> */}
       </form>
     </Form>
   );
 }
+
+export default forwardRef(TaskSubmissionForm);

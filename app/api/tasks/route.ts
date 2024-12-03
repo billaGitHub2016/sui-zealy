@@ -21,7 +21,7 @@ export async function PUT(request: Request) {
         }
     }
 
-    if (!name || !desc || attachments.length === 0) {
+    if (!name || !desc) {
         return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -47,7 +47,7 @@ export async function PUT(request: Request) {
             const { data, error } = await supabase
                 .from('tasks')
                 .insert([
-                    { name, desc, reward_method, claim_limit, pool, start_date, end_date, status: 1, user_id: user.id, attachments: attachmentUrls },
+                    { name, desc, reward_method, claim_limit, pool, start_date, end_date, status: 0, user_id: user.id, attachments: attachmentUrls },
                 ])
                 .select()
             if (error) {
