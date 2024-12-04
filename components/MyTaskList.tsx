@@ -29,16 +29,12 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { toast } from "@/components/ui/use-toast";
 import { Task } from "@/types/task";
 import TaskSubmissionDialog from "@/components/TaskSubmissionDialog"
 import SimpleAlert from '@/components/simple-alert'
-
-const SUI_MIST = 1000000000
-const STATUS_MAP = {
-  0: '草稿',
-  1: '已发布',
-  2: '完成'
-}
+import { TaskDetailCard } from '@/components/TaskDetailCard'
+import { SUI_MIST, STATUS_MAP } from '@/config/constants'
 
 // // 模拟任务数据
 // const tasks = [
@@ -76,6 +72,18 @@ export async function fetchTasks({
   return result.data;
 }
 
+export async function deleteTask(id: string): Promise<Task[]> {
+  debugger
+  const response = await fetch(`/api/tasks/${id}`, {
+    method: 'DELETE'
+  });
+  if (!response.ok) {
+    throw new Error("删除任务失败");
+  }
+  const result = await response.json();
+  return result.data;
+}
+
 export function TaskListTable({
   user,
 }: {
@@ -88,7 +96,9 @@ export function TaskListTable({
   const totalPage = Math.ceil(total / pageSize)
   const [tasks, setTasks] = useState<Task[]>([]);
   const [editTaskId, setEditTaskId] = useState('');
-  const [openAlert, setOpenAlert] = useState(fase);
+  const [openAlert, setOpenAlert] = useState(false);
+  const [operation, setOperation] = useState('');
+  const [alertTips, setAlertTips] = useState('');
   const form = useRef<{ setOpen: Function }>(null)
 
   //   const getCurrentPageTasks = () => {
@@ -117,12 +127,37 @@ export function TaskListTable({
     }
   }
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     console.log(`删除任务 ${id}`)
+    setEditTaskId(id);
+    setOpenAlert(true);
+    setAlertTips('确定要删除该任务吗？')
+    setOperation('delete')
   }
 
   const handlePublish = (id: number) => {
     console.log(`发布任务 ${id}`)
+  }
+
+  const onConfirm = () => {
+    if(operation === 'delete') {
+      setIsLoading(true)
+      deleteTask(editTaskId).then(() => {
+        toast({
+          title: "提示",
+          description: "任务已成功删除。",
+        });
+        return fetchTasks({ pageNo: pageNo, pageSize, user_id: user?.id }).then(data => {
+          if (data) {
+            setTasks(data.list);
+            setTotal(data.total);
+          }
+        })
+      }).finally(() => {
+        setIsLoading(false)
+      })
+      console.log(`删除任务 ${editTaskId}`)
+    }
   }
 
   return (
@@ -229,9 +264,12 @@ export function TaskListTable({
           </PaginationContent>
         </Pagination>
 
-        <SimpleAlert open={openAlert} onOpenChange={(open) => {
+        <SimpleAlert hasTrigger={false} tips={alertTips} open={openAlert} onOpenChange={(open) => {
           setOpenAlert(open)
-        }}></SimpleAlert>
+        }} onConfirm={onConfirm} onCancel={() => setOpenAlert(false)} ></SimpleAlert>
+
+        { tasks.length > 0 && (<TaskDetailCard task={tasks[0]}></TaskDetailCard>)}
+
       </div>
     </div>
   )

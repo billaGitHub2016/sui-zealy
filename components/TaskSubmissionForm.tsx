@@ -82,12 +82,16 @@ const TaskSubmissionForm = ({
       if (task.reward_method === 1) {
         form.setValue('one_pass_reward', (task.pool as number / SUI_MIST) / (task.claim_limit as number))
       }
-      debugger
       form.setValue('dateRange', {
         from: new Date(task.start_date as string),
         to: new Date(task.end_date as string)
       })
       setPreviews(task.attachments as Array<string>)
+      form.setValue('attachment', task.attachments?.map(attachment => {
+        const name = attachment.split('/').pop() as string
+        const newFile = new File([], name)
+        return newFile
+      }) as Array<File>)
     }
   }, [task])
 
@@ -144,14 +148,28 @@ const TaskSubmissionForm = ({
       formData.append("pool", values.pool * SUI_MIST + '');
       formData.append("start_date", values.dateRange.from.toISOString().toLocaleString());
       formData.append("end_date", values.dateRange.to.toISOString().toLocaleString());
-      values.attachment.forEach((file, index) => {
-        formData.append(`attachment${index}`, file);
-      });
+      
 
-      const response = await fetch("/api/tasks", {
-        method: "PUT",
-        body: formData,
-      });
+      let response = null
+      if (task) {
+        if (previews.some(pUrl => task.attachments?.indexOf(pUrl) === -1)) {
+          values.attachment.forEach((file, index) => {
+            formData.append(`attachment${index}`, file);
+          });
+        }
+        response = await fetch(`/api/tasks/${task.id}`, {
+          method: "POST",
+          body: formData,
+        });
+      } else {
+        values.attachment.forEach((file, index) => {
+          formData.append(`attachment${index}`, file);
+        });
+        response = await fetch("/api/tasks", {
+          method: "PUT",
+          body: formData,
+        });
+      }
 
       if (!response.ok) {
         throw new Error("提交失败");
