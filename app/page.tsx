@@ -8,6 +8,7 @@ import hero from "/public/hero.png";
 import { Button } from "@/components/ui/button";
 import ExplainerSection from "@/components/ExplainerSection";
 import PricingSection from "@/components/PricingSection";
+import Hero from '@/components/Hero'
 
 export const dynamic = "force-dynamic";
 
@@ -18,13 +19,13 @@ export default async function Index() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user) {
-    return redirect("/overview");
-  }
+  // if (user) {
+  //   return redirect("/overview");
+  // }
 
   return (
     <div className="flex flex-col items-center pt-16">
-      <div className="flex flex-col lg:flex-row items-center gap-8 p-8 max-w-6xl w-full">
+      {/* <div className="flex flex-col lg:flex-row items-center gap-8 p-8 max-w-6xl w-full">
         <div className="flex flex-col space-y-4 lg:w-1/2 w-full">
           <h1 className="text-5xl font-bold">
             Professional AI Headshots in minutes.
@@ -34,6 +35,9 @@ export default async function Index() {
             Ideal for social profiles, resumes, and professional portfolios.
           </p>
           <div className="flex flex-col space-y-2">
+            <Link href="/login">
+              <Button className="w-full lg:w-1/2">Get Your Headshots</Button>
+            </Link>
             <Link href="/login">
               <Button className="w-full lg:w-1/2">Get Your Headshots</Button>
             </Link>
@@ -55,9 +59,11 @@ export default async function Index() {
             className="rounded-lg object-cover w-full h-full"
           />
         </div>
-      </div>
-      <ExplainerSection />
-      <PricingSection />
+        
+      </div> */}
+      {/* <ExplainerSection />
+      <PricingSection /> */}
+      <Hero></Hero>
     </div>
   );
 }

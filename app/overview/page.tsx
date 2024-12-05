@@ -1,12 +1,13 @@
 // import ClientSideModelsList from "@/components/realtime/ClientSideModelsList";
-// import { Database } from "@/types/supabase";
+import { Database } from "@/types/supabase";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import TaskSubmissionDialog from "@/components/TaskSubmissionDialog"
-import TaskList from '@/components/TaskList'
-import { TaskListTable as MyTaskList } from '@/components/MyTaskList'
-import { Suspense } from 'react'
-import { Skeleton } from '@/components/ui/skeleton'
+import TaskSubmissionDialog from "@/components/TaskSubmissionDialog";
+import TaskList from "@/components/TaskList";
+import { TaskListTable as MyTaskList } from "@/components/MyTaskList";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const dynamic = "force-dynamic";
 
@@ -33,16 +34,33 @@ export default async function Index() {
   // return <ClientSideModelsList serverModels={models ?? []} />;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <TaskSubmissionDialog />
-      <h1 className="text-3xl font-bold mb-6">已发布任务列表</h1>
-      <Suspense fallback={<TaskListSkeleton />}>
-        {/* <TaskList /> */}
-        <MyTaskList user={user}></MyTaskList>
-      </Suspense>
+    <div className="container w-full px-4 py-8">
+      <Tabs defaultValue="myTask" className="w-full">
+        <TabsList>
+          <TabsTrigger value="myTask">我的任务</TabsTrigger>
+          <TabsTrigger value="myApply">我的申请</TabsTrigger>
+        </TabsList>
+        <TabsContent
+          value="myTask"
+          forceMount
+          className="data-[state=inactive]:hidden"
+        >
+          <Suspense fallback={<TaskListSkeleton />}>
+            {/* <TaskSubmissionDialog /> */}
+            <MyTaskList user={user}></MyTaskList>
+          </Suspense>
+        </TabsContent>
+        <TabsContent
+          value="myApply"
+          forceMount
+          className="data-[state=inactive]:hidden"
+        >
+          hahaha
+        </TabsContent>
+      </Tabs>
     </div>
-  )
-  return
+  );
+  return;
 }
 
 function TaskListSkeleton() {
@@ -56,5 +74,5 @@ function TaskListSkeleton() {
         </div>
       ))}
     </div>
-  )
+  );
 }

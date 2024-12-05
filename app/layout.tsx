@@ -1,7 +1,8 @@
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { Toaster } from "@/components/ui/toaster";
-import "./globals.css";
+import "../styles/globals.css";
+import "../styles/loading.css";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { Providers } from "@/components/providers/sui-provider";

@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import TaskSubmissionForm from "@/components/TaskSubmissionForm";
+import TaskDetailCard from "@/components/TaskDetailCard";
 import { Task } from "@/types/task";
 
 export async function fetchTask(id: string): Promise<Task> {
@@ -30,17 +30,13 @@ export async function fetchTask(id: string): Promise<Task> {
   return result.data;
 }
 
-const TaskSubmissionDialog = (
+const TaskPublishDialog = (
   {
     taskId,
-    hasTrigger = true,
-    title = "创建新任务",
-    submitSuccessCallback,
+    title = "发布任务",
   }: {
     taskId?: string;
-    hasTrigger?: boolean;
     title?: string;
-    submitSuccessCallback?: () => void;
   },
   ref: Ref<{
     setOpen: Function;
@@ -49,6 +45,7 @@ const TaskSubmissionDialog = (
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [task, setTask] = useState<Task | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useImperativeHandle(ref, () => ({
     setOpen,
@@ -60,63 +57,70 @@ const TaskSubmissionDialog = (
 
   useEffect(() => {
     if (taskId && open) {
+      setLoading(true);
       fetchTask(taskId).then((t) => {
         console.log("task = ", t);
         setTask(t);
+      }).finally(() => {
+        setLoading(false);
       });
     }
   }, [taskId, open]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {hasTrigger && (
-        <DialogTrigger asChild>
-          <Button>创建新任务</Button>
-        </DialogTrigger>
-      )}
       <DialogContent
-        className="max-w-[70vw] min-h-[90vh] flex flex-col"
+        className="max-w-[70vw] max-h-[90vh] flex flex-col"
         onPointerDownOutside={(event) => {
           event.preventDefault();
         }}
       >
-        <DialogHeader className="flex flex-col">
+        <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {/* <DialogDescription>
             请填写以下表单来创建一个新的任务。所有字段都是必填的。
           </DialogDescription> */}
         </DialogHeader>
-        <div className="overflow-y-auto flex-1">
-          <TaskSubmissionForm
-            onSubmitSuccess={() => setOpen(false)}
-            ref={form}
-            task={task}
-          />
+        <div className="overflow-y-auto h-3/6">
+          <TaskDetailCard task={task} isLoading={loading}/>
         </div>
         <DialogFooter className="">
-          <Button
-            type="submit"
-            onClick={() => {
-              console.log("submit");
-              if (form.current) {
-                setIsSubmitting(true);
-                form.current.onSubmit().then(() => {
-                  if (submitSuccessCallback) {
-                    submitSuccessCallback();
-                  }
-                }).finally(() => {
-                  setIsSubmitting(false);
-                });
-              }
-            }}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "提交中..." : "提交"}
-          </Button>
+          {task?.status === 0 && (
+            <Button
+              onClick={() => {
+                console.log("submit");
+                if (form.current) {
+                  setIsSubmitting(true);
+                  form.current.onSubmit().finally(() => {
+                    setIsSubmitting(false);
+                  });
+                }
+              }}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "提交中..." : "发布"}
+            </Button>
+          )}
+          {task?.status === 1 && (
+            <Button
+              onClick={() => {
+                console.log("submit");
+                if (form.current) {
+                  setIsSubmitting(true);
+                  form.current.onSubmit().finally(() => {
+                    setIsSubmitting(false);
+                  });
+                }
+              }}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "提交中..." : "取消发布"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
 
-export default forwardRef(TaskSubmissionDialog);
+export default forwardRef(TaskPublishDialog);

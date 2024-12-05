@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react";
 import {
   Table,
   TableBody,
@@ -8,8 +8,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,9 +17,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Pencil, Trash, Send } from 'lucide-react'
-import { Badge } from "@/components/ui/badge"
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Pencil, Trash, Send } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import {
   Pagination,
   PaginationContent,
@@ -28,13 +28,13 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination"
+} from "@/components/ui/pagination";
 import { toast } from "@/components/ui/use-toast";
 import { Task } from "@/types/task";
-import TaskSubmissionDialog from "@/components/TaskSubmissionDialog"
-import SimpleAlert from '@/components/simple-alert'
-import { TaskDetailCard } from '@/components/TaskDetailCard'
-import { SUI_MIST, STATUS_MAP } from '@/config/constants'
+import TaskSubmissionDialog from "@/components/TaskSubmissionDialog";
+import TaskPublishDialog from "@/components/TaskPublishDialog";
+import SimpleAlert from "@/components/simple-alert";
+import { SUI_MIST, STATUS_MAP } from "@/config/constants";
 
 // // 模拟任务数据
 // const tasks = [
@@ -55,14 +55,17 @@ import { SUI_MIST, STATUS_MAP } from '@/config/constants'
 export async function fetchTasks({
   pageNo,
   pageSize = 10,
-  user_id
+  user_id,
 }: {
   pageNo: number;
   pageSize?: number;
   user_id: string;
-}): Promise<Task[]> {
+}): Promise<{
+  list: Task[];
+  total: number;
+}> {
   const response = await fetch(`/api/tasks`, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify({ pageNo, pageSize, user_id }),
   });
   if (!response.ok) {
@@ -73,9 +76,9 @@ export async function fetchTasks({
 }
 
 export async function deleteTask(id: string): Promise<Task[]> {
-  debugger
+  debugger;
   const response = await fetch(`/api/tasks/${id}`, {
-    method: 'DELETE'
+    method: "DELETE",
   });
   if (!response.ok) {
     throw new Error("删除任务失败");
@@ -84,22 +87,19 @@ export async function deleteTask(id: string): Promise<Task[]> {
   return result.data;
 }
 
-export function TaskListTable({
-  user,
-}: {
-  user: any,
-}) {
-  const [pageNo, setPageNo] = useState(1)
-  const [total, setTotal] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
-  const pageSize = 10
-  const totalPage = Math.ceil(total / pageSize)
+export function TaskListTable({ user }: { user: any }) {
+  const [pageNo, setPageNo] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const pageSize = 10;
+  const totalPage = Math.ceil(total / pageSize);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [editTaskId, setEditTaskId] = useState('');
+  const [editTaskId, setEditTaskId] = useState("");
   const [openAlert, setOpenAlert] = useState(false);
-  const [operation, setOperation] = useState('');
-  const [alertTips, setAlertTips] = useState('');
-  const form = useRef<{ setOpen: Function }>(null)
+  const [operation, setOperation] = useState("");
+  const [alertTips, setAlertTips] = useState("");
+  const form = useRef<{ setOpen: Function }>(null);
+  const publishForm = useRef<{ setOpen: Function }>(null);
 
   //   const getCurrentPageTasks = () => {
   //     const startIndex = (pageNo - 1) * pageSize
@@ -108,61 +108,77 @@ export function TaskListTable({
   //   }
 
   useEffect(() => {
-    setIsLoading(true)
-    fetchTasks({ pageNo: pageNo, pageSize, user_id: user?.id }).then(data => {
-      if (data) {
-        setTasks(data.list);
-        setTotal(data.total);
-      }
-    }).finally(() => {
-      setIsLoading(false)
-    })
-  }, [pageNo])
+    getTaskByPage();
+  }, [pageNo]);
+
+  const getTaskByPage = () => {
+    setIsLoading(true);
+    fetchTasks({ pageNo: pageNo, pageSize, user_id: user?.id })
+      .then((result) => {
+        if (result) {
+          setTasks(result.list);
+          setTotal(result.total);
+        }
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }
 
   const handleEdit = (id: string) => {
-    console.log(`编辑任务 ${id}`)
+    console.log(`编辑任务 ${id}`);
     setEditTaskId(id);
     if (form.current) {
-      form.current.setOpen(true)
+      form.current.setOpen(true);
     }
-  }
+  };
 
   const handleDelete = (id: string) => {
-    console.log(`删除任务 ${id}`)
+    console.log(`删除任务 ${id}`);
     setEditTaskId(id);
     setOpenAlert(true);
-    setAlertTips('确定要删除该任务吗？')
-    setOperation('delete')
-  }
+    setAlertTips("确定要删除该任务吗？");
+    setOperation("delete");
+  };
 
-  const handlePublish = (id: number) => {
-    console.log(`发布任务 ${id}`)
-  }
+  const handlePublish = (id: string) => {
+    console.log(`发布任务 ${id}`);
+    setEditTaskId(id);
+    publishForm.current?.setOpen(true);
+  };
 
   const onConfirm = () => {
-    if(operation === 'delete') {
-      setIsLoading(true)
-      deleteTask(editTaskId).then(() => {
-        toast({
-          title: "提示",
-          description: "任务已成功删除。",
-        });
-        return fetchTasks({ pageNo: pageNo, pageSize, user_id: user?.id }).then(data => {
-          if (data) {
-            setTasks(data.list);
-            setTotal(data.total);
-          }
+    if (operation === "delete") {
+      setIsLoading(true);
+      deleteTask(editTaskId)
+        .then(() => {
+          toast({
+            title: "提示",
+            description: "任务已成功删除。",
+          });
+          return fetchTasks({
+            pageNo: pageNo,
+            pageSize,
+            user_id: user?.id,
+          }).then((result) => {
+            if (result) {
+              setTasks(result.list);
+              setTotal(result.total);
+            }
+          });
         })
-      }).finally(() => {
-        setIsLoading(false)
-      })
-      console.log(`删除任务 ${editTaskId}`)
+        .finally(() => {
+          setIsLoading(false);
+        });
+      console.log(`删除任务 ${editTaskId}`);
     }
-  }
+  };
 
   return (
     <div className="w-full">
-      <TaskSubmissionDialog ref={form} taskId={editTaskId} hasTrigger={false}/>
+      <TaskSubmissionDialog ref={form} taskId={editTaskId} submitSuccessCallback={getTaskByPage} />
+      <TaskPublishDialog ref={publishForm} taskId={editTaskId} />
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -189,52 +205,63 @@ export function TaskListTable({
                 暂无数据
               </TableCell>
             </TableRow>
-          ) :
-            (
-              tasks.map((task) => (
-                <TableRow key={task.id}>
-                  <TableCell>{task.name}</TableCell>
-                  <TableCell>{task.desc}</TableCell>
-                  <TableCell>
-                    <Badge variant={task.status == 0 ? "outline" : task.status == 1 ? "default" : "secondary"}>
-                      { STATUS_MAP[task.status] }
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{ task.pool as number / SUI_MIST }</TableCell>
-                  <TableCell>{new Date(task.created_at).toLocaleString()}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">打开菜单</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>操作</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleEdit(task.id)}>
-                          <Pencil className="mr-2 h-4 w-4" />
-                          <span>编辑</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(task.id)}>
-                          <Trash className="mr-2 h-4 w-4" />
-                          <span>删除</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handlePublish(task.id)}>
-                          <Send className="mr-2 h-4 w-4" />
-                          <span>发布</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )
-          }
+          ) : (
+            tasks.map((task) => (
+              <TableRow key={task.id}>
+                <TableCell>{task.name}</TableCell>
+                <TableCell>{task.desc}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      task.status == 0
+                        ? "outline"
+                        : task.status == 1
+                        ? "default"
+                        : "secondary"
+                    }
+                  >
+                    {STATUS_MAP[task.status]}
+                  </Badge>
+                </TableCell>
+                <TableCell>{(task.pool as number) / SUI_MIST}</TableCell>
+                <TableCell>
+                  {new Date(task.created_at).toLocaleString()}
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">打开菜单</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>操作</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => handleEdit(task.id)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        <span>编辑</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDelete(task.id)}>
+                        <Trash className="mr-2 h-4 w-4" />
+                        <span>删除</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handlePublish(task.id)}>
+                        <Send className="mr-2 h-4 w-4" />
+                        <span>发布</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
-      <div className="mt-4 flex justify-end aria-hidden:hidden" aria-hidden={tasks.length == 0}>
+      <div
+        className="mt-4 flex justify-end aria-hidden:hidden"
+        aria-hidden={tasks.length == 0}
+      >
         <Pagination>
           <PaginationContent>
             <PaginationItem>
@@ -256,7 +283,9 @@ export function TaskListTable({
             ))}
             <PaginationItem>
               <PaginationNext
-                onClick={() => setPageNo((prev) => Math.min(prev + 1, totalPage))}
+                onClick={() =>
+                  setPageNo((prev) => Math.min(prev + 1, totalPage))
+                }
                 aria-disabled={pageNo === 1}
                 className="aria-disabled:bg-slate-50 aria-disabled:text-gray-500 aria-disabled:cursor-not-allowed"
               />
@@ -264,14 +293,17 @@ export function TaskListTable({
           </PaginationContent>
         </Pagination>
 
-        <SimpleAlert hasTrigger={false} tips={alertTips} open={openAlert} onOpenChange={(open) => {
-          setOpenAlert(open)
-        }} onConfirm={onConfirm} onCancel={() => setOpenAlert(false)} ></SimpleAlert>
-
-        { tasks.length > 0 && (<TaskDetailCard task={tasks[0]}></TaskDetailCard>)}
-
+        <SimpleAlert
+          hasTrigger={false}
+          tips={alertTips}
+          open={openAlert}
+          onOpenChange={(open) => {
+            setOpenAlert(open);
+          }}
+          onConfirm={onConfirm}
+          onCancel={() => setOpenAlert(false)}
+        ></SimpleAlert>
       </div>
     </div>
-  )
+  );
 }
-
