@@ -3,7 +3,8 @@ import { createNetworkConfig } from "@mysten/dapp-kit";
 
 type Network = "mainnet" | "testnet" | "devnet" | "localnet";
 
-const network = (process.env.NEXT_PUBLIC_NETWORK as Network) || "testnet";
+// const network = (process.env.NEXT_PUBLIC_NETWORK as Network) || "testnet";
+const network = "testnet";
 
 const { networkConfig, useNetworkVariable, useNetworkVariables } = createNetworkConfig({
     testnet: {

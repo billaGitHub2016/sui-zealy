@@ -12,4 +12,5 @@ export type Task = {
     reward_method: number | null
     start_date: string | null
     status: number | null
+    publish_date: string | null
 }

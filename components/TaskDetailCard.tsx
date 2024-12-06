@@ -5,12 +5,15 @@ import Image from "next/image"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Wallet } from 'lucide-react'
-import { ConnectButton } from '@mysten/dapp-kit'
+import { ConnectButton, useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit'
+
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Task } from "@/types/task"
 import { SUI_MIST, STATUS_MAP, REWARD_METHODS } from '@/config/constants'
-// import { Transaction } from "@mysten/sui/dist/cjs/transactions"
+import { Transaction } from "@mysten/sui/transactions";
+import { MIST_PER_SUI } from "@mysten/sui/utils";
+import { toast } from "@/components/ui/use-toast";
 
 interface TaskDetailProps {
   taskName: string
@@ -18,14 +21,29 @@ interface TaskDetailProps {
   images: string[]
 }
 
-export default function TaskDetailCard({ task, isLoading = false }: { task: Task | null, isLoading?: boolean }) {
-  const [isWalletConnected, setIsWalletConnected] = useState(false)
-
-  const handleConnectWallet = () => {
-    // 这里应该是实际连接 SUI 钱包的逻辑
-    // 现在我们只是模拟连接过程
-    setIsWalletConnected(true)
+export async function updateTask(updateTask: Partial<Task>): Promise<Task> {
+  const formData = new FormData();
+  type TaskFields = keyof Task;
+  for (const key in updateTask) {
+    if (Object.prototype.hasOwnProperty.call(updateTask, key)) {
+      const element = updateTask[key as TaskFields];
+      formData.append(key, element as string);
+    }
   }
+
+  const response = await fetch(`/api/tasks/${updateTask.id}`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!response.ok) {
+    throw new Error("更新任务失败");
+  }
+  const result = await response.json();
+  return result.data;
+}
+
+export default function TaskDetailCard({ task, isLoading = false }: { task: Task | null, isLoading?: boolean }) {
+  const [loading, setLoading] = useState(false)
 
   const DetailItem = ({ label, value }: { label: string; value: string | number }) => (
     <div className="flex items-center">
@@ -34,13 +52,108 @@ export default function TaskDetailCard({ task, isLoading = false }: { task: Task
     </div>
   )
 
+  const account = useCurrentAccount();
+  const suiClient = useSuiClient();
+  const { mutate: signAndExecute } = useSignAndExecuteTransaction({
+    execute: async ({ bytes, signature }) =>
+      await suiClient.executeTransactionBlock({
+        transactionBlock: bytes,
+        signature,
+        options: {
+          // Raw effects are required so the effects can be reported back to the wallet
+          showRawEffects: true,
+          showEffects: true,
+          showEvents: true
+        },
+      }),
+  });
   const handlePublish = () => {
-    // 这里应该是实际发布任务的逻辑
-    // const txb = new Transaction();
-    // const [counterNft] = txb.moveCall({
-    //   target: `${process.env.NEXT_PUBLIC_PACKAGE_ID}::counter_nft::mint`,
-    //   arguments: [],
-    // });
+    if (!task) {
+      return;
+    }
+    if (task.status !== 0) {
+      toast({
+        title: "校验失败",
+        description: '任务不能发布',
+        variant: "destructive",
+      });
+      return
+    }
+    if (!account) {
+      toast({
+        title: "校验失败",
+        description: '请先连接钱包',
+        variant: "destructive",
+      });
+      return
+    }
+    const txb = new Transaction();
+
+    debugger
+    txb.setGasBudget(1000000000);
+    const [coin] = txb.splitCoins(txb.gas, [
+      // BigInt(task.pool as number),
+      task.pool as number
+    ]);
+
+    txb.moveCall({
+      target: `${process.env.NEXT_PUBLIC_PACKAGE_ID}::task::create_task`,
+      arguments: [
+        coin,
+        txb.pure.string(task.name as string),
+        txb.pure.u64(new Date(task.end_date as string).getTime()),
+        txb.pure.u8(task.reward_method as number),
+        txb.pure.u64(1),
+        txb.object('0x6')
+      ],
+      // typeArguments: ['0x2::coin::Coin<0x2::sui::SUI>']
+      typeArguments: []
+    });
+
+    setLoading(true)
+    signAndExecute(
+      {
+        transaction: txb,
+      },
+      {
+        onSuccess: async (data) => {
+          console.log("transaction digest: " + JSON.stringify(data));
+          debugger
+          if (((data.effects && data.effects.status.status) as unknown as string) !== 'failure') {
+            const taskAddress = (data.effects?.mutated?.length as unknown as number) > 0 && (data.effects?.mutated as unknown as any)[0].reference.objectId
+            updateTask({
+              id: task.id,
+              publish_date: new Date().toISOString().toLocaleString(),
+              status: 1,
+              owner_address: account.address,
+              address: taskAddress
+            }).then(() => {
+              toast({
+                title: "发布成功",
+                description: '任务发布成功，在犹豫期内可下架任务',
+              });
+            }).finally(() => {
+              setLoading(false)
+            })
+          } else {
+            toast({
+              title: "发布失败",
+              description: '发布链上任务失败，请稍后再试',
+              variant: "destructive"
+            });
+          }
+        },
+        onError: (err) => {
+          console.log("transaction error: " + err);
+          toast({
+            title: "发布失败",
+            description: `发布链上任务失败:${err.message}，请稍后再试`,
+            variant: "destructive"
+          });
+          setLoading(false)
+        }
+      },
+    );
   }
 
   if (isLoading) {
@@ -84,7 +197,7 @@ export default function TaskDetailCard({ task, isLoading = false }: { task: Task
             <DetailItem label="任务状态" value={STATUS_MAP[parseInt(task.status)]} />
             <DetailItem label="奖池金额" value={(task.pool as number) / SUI_MIST + 'SUI'} />
             <DetailItem label="申请通过总数" value={(task.claim_limit as number)} />
-            { task.reward_method === 1 && <DetailItem label="单个申请奖励金额" value={(task.pool as number) / SUI_MIST / (task.claim_limit as number) + 'SUI'} />}
+            {task.reward_method === 1 && <DetailItem label="单个申请奖励金额" value={(task.pool as number) / SUI_MIST / (task.claim_limit as number) + 'SUI'} />}
           </div>
           <div className="space-y-2">
             <DetailItem label="创建时间" value={new Date(task.created_at).toLocaleString()} />
@@ -94,7 +207,7 @@ export default function TaskDetailCard({ task, isLoading = false }: { task: Task
         </div>
         <Separator />
         <div className="space-y-2">
-        <span className="text-sm text-gray-500">钱包地址: <ConnectButton className="bg-fuchsia-800"></ConnectButton></span>
+          <span className="text-sm text-gray-500">钱包地址: <ConnectButton className="bg-fuchsia-800"></ConnectButton></span>
         </div>
 
         {task.attachments && task.attachments.length > 0 && (
@@ -122,6 +235,7 @@ export default function TaskDetailCard({ task, isLoading = false }: { task: Task
       </CardContent>
       <CardFooter>
         {/* <ConnectButton className="bg-fuchsia-800"></ConnectButton> */}
+        <Button onClick={handlePublish}>测试</Button>
       </CardFooter>
     </Card>
   )
