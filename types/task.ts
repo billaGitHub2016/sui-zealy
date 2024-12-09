@@ -13,4 +13,7 @@ export type Task = {
     start_date: string | null
     status: number | null
     publish_date: string | null
+    user_id: string
+    record_count?: number | null
+    record_pass_count?: number | null
 }

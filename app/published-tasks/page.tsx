@@ -9,15 +9,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 export const dynamic = "force-dynamic";
 
 export default async function Index() {
-  const supabase = createServerComponentClient<Database>({ cookies });
+  // const supabase = createServerComponentClient<Database>({ cookies });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // const {
+  //   data: { user },
+  // } = await supabase.auth.getUser();
 
-  if (!user) {
-    return <div>User not found</div>;
-  }
+  // if (!user) {
+  //   return <div>User not found</div>;
+  // }
 
   // const { data: models } = await supabase
   //   .from("models")

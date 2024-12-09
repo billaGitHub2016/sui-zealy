@@ -1,8 +1,11 @@
 export const SUI_MIST = 1000000000
+export const Draft = 0
+export const Published = 1
+export const Completed = 2
 export const STATUS_MAP = {
-  0: '草稿',
-  1: '已发布',
-  2: '完成'
+  [Draft]: '草稿',
+  [Published]: '已发布',
+  [Completed]: '完成'
 }
 export const REWARD_METHODS = {
     1: '通过审核就发放单个申请奖励',

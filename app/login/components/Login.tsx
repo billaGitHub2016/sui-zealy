@@ -155,7 +155,7 @@ export const Login = ({
               className="w-full"
               type="submit"
             >
-              Continue with Email
+              输入邮箱登录
             </Button>
           </form>
         </div>
