@@ -60,7 +60,7 @@ export default function TaskDetailCard({
 }: {
   task: Task | null;
   isLoading?: boolean;
-  user: {
+  user?: {
     id: string;
   };
 }) {
@@ -253,11 +253,11 @@ export default function TaskDetailCard({
             <div className="space-y-2">
               <DetailItem
                 label="奖励方式"
-                value={REWARD_METHODS[task.reward_method as number] as string}
+                value={REWARD_METHODS[task.reward_method as 1 | 2] as string}
               />
               <DetailItem
                 label="任务状态"
-                value={STATUS_MAP[parseInt(task.status)]}
+                value={STATUS_MAP[task?.status as 0 | 1 | 2] as string}
               />
               <DetailItem
                 label="奖池金额"
@@ -294,7 +294,7 @@ export default function TaskDetailCard({
               />
             </div>
           </div>
-          {user.id === task.user_id && (
+          {user?.id === task.user_id && (
             <>
               <Separator />
               <div className="space-y-2">

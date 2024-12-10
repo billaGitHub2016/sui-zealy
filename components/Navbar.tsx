@@ -30,17 +30,17 @@ export default async function Navbar() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: credits } = await supabase
-    .from("credits")
-    .select("*")
-    .eq("user_id", user?.id ?? "")
-    .single();
+  // const { data: credits } = await supabase
+  //   .from("credits")
+  //   .select("*")
+  //   .eq("user_id", user?.id ?? "")
+  //   .single();
 
   return (
     <div className="flex w-full px-4 lg:px-40 py-4 items-center border-b text-center gap-8 justify-between">
       <div className="flex gap-2 h-full">
         <Link href="/">
-          <h2 className="font-bold">Headshots AI</h2>
+          <h2 className="font-bold text-xl">SUI-Zealy</h2>
         </Link>
       </div>
       {user && (
@@ -66,7 +66,7 @@ export default async function Navbar() {
             <Button variant={"ghost"}>Login / Signup</Button>
           </Link>
         )}
-        {user && (
+        {/* {user && (
           <div className="flex flex-row gap-4 text-center align-middle justify-center">
             {stripeIsConfigured && (
               <ClientSideCredits creditsRow={credits ? credits : null} />
@@ -92,7 +92,7 @@ export default async function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

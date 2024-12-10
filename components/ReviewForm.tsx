@@ -35,68 +35,64 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DateBefore } from "react-day-picker";
+import { Record } from "@/types/record";
 import { Task } from "@/types/task";
 import { User } from "@supabase/supabase-js";
-
-const SUI_MIST = 1000000000;
+import { Pass, Fail, RESULT_MAP } from '@/config/constants'
 
 const formSchema = z.object({
-  desc: z.string().min(1, {
-    message: "申请描述至少需要10个字符。",
+  result: z.number().refine((v) => v === Pass || v === Fail, {
+    message: "请选择审核结果",
   }),
-  attachments: z.array(z.instanceof(File)),
+  comment: z.string(),
 });
 
-const TaskClaimForm = (
+const ReviewForm = (
   {
     onSubmitSuccess,
+    record,
     task,
-    user
+    user,
   }: {
     onSubmitSuccess?: () => void;
-    task?: Task | null;
-    user: User
+    record: Record | null;
+    task: Task;
+    user: User | null;
   },
   ref: Ref<{
     onSubmit: Function;
   }>
 ) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [previews, setPreviews] = useState<string[]>([]);
   const account = useCurrentAccount();
 
   useImperativeHandle(ref, () => ({
     onSubmit,
   }));
 
-  useEffect(() => {
-    
-  }, [task]);
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      desc: "",
-      attachments: [],
+      comment: "",
     },
   });
 
   async function onSubmit() {
-    if (!task) {
+    if (!record) {
       return;
     }
-    if (task.status !== 1) {
+    if (record.result !== 0) {
       toast({
         title: "校验失败",
-        description: "任务不能申请",
+        description: "申请不能审核",
         variant: "destructive",
       });
       return;
     }
-    if (user.id === task.user_id) {
+    if (user?.id === record.user_id) {
       toast({
         title: "校验失败",
-        description: "不能申请自己的任务",
+        description: "不能审核自己的申请",
         variant: "destructive",
       });
       return;
@@ -134,14 +130,11 @@ const TaskClaimForm = (
 
       const values = form.getValues();
       const formData = new FormData();
-      formData.append("desc", values.desc);
-      values.attachments.forEach((file, index) => {
-        formData.append(`attachments${index}`, file);
-      });
-      formData.append("wallet_address", account.address);
-      formData.append("task_id", task?.id as unknown as string);
+      formData.append("result", values.result + '');
+      formData.append("comment", values.comment);
+      formData.append("id", record.id + '');
 
-      const response = await fetch("/api/claimTask", {
+      const response = await fetch("/api/reviews", {
         method: "PUT",
         body: formData,
       });
@@ -152,13 +145,13 @@ const TaskClaimForm = (
       }
 
       toast({
-        title: "申请提交成功",
-        description: "您的申请已提交，请耐心等待审核结果。",
+        title: "审核提交成功",
+        description: "审核提交成功，奖励已发放",
       });
       onSubmitSuccess && onSubmitSuccess();
     } catch (error: any) {
       toast({
-        title: "申请提交失败",
+        title: "审核提交失败",
         description: error.message,
         variant: "destructive",
       });
@@ -171,23 +164,34 @@ const TaskClaimForm = (
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
+      <FormField
           control={form.control}
-          name="desc"
+          name="result"
           render={({ field }) => (
             <FormItem className="grid sm:grid-cols-8 gap-4 items-start">
-              <FormLabel className="sm:text-right pt-5 sm:col-span-3">申请描述</FormLabel>
+              <FormLabel className="sm:text-right pt-5 sm:col-span-3">审核结果</FormLabel>
               <div className="sm:col-span-5">
                 <FormControl>
-                  <Textarea
-                    placeholder="简单描述一下任务的完成情况"
-                    className="resize-none"
-                    {...field}
-                  />
+                  <RadioGroup
+                    defaultValue={field.value?.toString()}
+                    onValueChange={(val) => {
+                      field.onChange(parseInt(val));
+                    }}
+                    className="flex"
+                  >
+                    <div className="flex items-center space-x-2 mr-3">
+                      <RadioGroupItem value="1" id="r1" />
+                      <Label htmlFor="r1">{RESULT_MAP[1]}</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="2" id="r2" />
+                      <Label htmlFor="r2">
+                      {RESULT_MAP[2]}
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </FormControl>
-                <FormDescription>
-                  描述任务的完成情况，必要时说明审核的注意点。
-                </FormDescription>
+                <FormDescription>通过则发放奖励，不通过则不发放</FormDescription>
                 <FormMessage />
               </div>
             </FormItem>
@@ -195,59 +199,22 @@ const TaskClaimForm = (
         />
         <FormField
           control={form.control}
-          name="attachments"
-          render={({ field: { onChange, value, ...rest } }) => (
+          name="comment"
+          render={({ field }) => (
             <FormItem className="grid sm:grid-cols-8 gap-4 items-start">
-              <FormLabel className="sm:text-right pt-5 sm:col-span-3">图片附件</FormLabel>
+              <FormLabel className="sm:text-right pt-5 sm:col-span-3">
+                评论
+              </FormLabel>
               <div className="sm:col-span-5">
                 <FormControl>
-                  <div className="space-y-4">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files || []);
-                        onChange(files);
-                        setPreviews(
-                          files.map((file) => URL.createObjectURL(file))
-                        );
-                      }}
-                      {...rest}
-                    />
-                    {previews.length > 0 && (
-                      <div className="grid grid-cols-3 gap-4">
-                        {previews.map((preview, index) => (
-                          <div key={index} className="relative">
-                            <img
-                              src={preview}
-                              alt={`Preview ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-md"
-                            />
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              className="absolute top-1 right-1 h-6 w-6"
-                              onClick={() => {
-                                const newFiles = [...value];
-                                newFiles.splice(index, 1);
-                                onChange(newFiles);
-                                const newPreviews = [...previews];
-                                newPreviews.splice(index, 1);
-                                setPreviews(newPreviews);
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <Textarea
+                    placeholder="如果不通过，请说明原因"
+                    className="resize-none"
+                    {...field}
+                  />
                 </FormControl>
                 <FormDescription>
-                  上传一张或多张与任务相关的图片(支持jpg、png格式)。
+                  填写审核通过/不通过的原因。如果不通过，请说明原因。
                 </FormDescription>
                 <FormMessage />
               </div>
@@ -256,7 +223,9 @@ const TaskClaimForm = (
         />
 
         <div className="grid sm:grid-cols-8 gap-4 items-start">
-          <FormLabel className="sm:text-right pt-5 sm:col-span-3">钱包地址</FormLabel>
+          <FormLabel className="sm:text-right pt-5 sm:col-span-3">
+            钱包地址
+          </FormLabel>
           <div className="sm:col-span-5">
             <ConnectButton>连接钱包</ConnectButton>
           </div>
@@ -264,7 +233,7 @@ const TaskClaimForm = (
 
         <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "提交中..." : "申请奖励"}
+            {isSubmitting ? "提交中..." : "提交"}
           </Button>
         </div>
       </form>
@@ -272,4 +241,4 @@ const TaskClaimForm = (
   );
 };
 
-export default forwardRef(TaskClaimForm);
+export default forwardRef(ReviewForm);

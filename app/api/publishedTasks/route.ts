@@ -5,8 +5,6 @@ import { Published } from '@/config/constants';
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        console.log('body = ', body)
-
         const supabase = createPagesBrowserClient({ supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL, supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY });
         const { pageNo, pageSize, orderBy } = body;
         const builder = supabase.rpc('get_published_tasks_v5', { offsetsize: (pageNo - 1) * pageSize, pagesize: pageSize, orderby: orderBy || 'created_at' })

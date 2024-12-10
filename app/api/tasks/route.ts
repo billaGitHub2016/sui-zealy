@@ -32,7 +32,7 @@ export async function PUT(request: Request) {
                 const buffer = Buffer.from(bytes)
                 const fileName = `${Date.now()}-${index}-${attachment.name}`
                 const path = join("./public", "uploads", fileName)
-                await writeFile(path, buffer)
+                await writeFile(path, new Uint8Array(buffer))
                 return `/uploads/${fileName}`
             })
         )
@@ -66,7 +66,6 @@ export async function PUT(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        console.log('body = ', body)
         const supabase = createRouteHandlerClient({ cookies });
 
         const builder = supabase.from('tasks')
@@ -92,8 +91,8 @@ export async function POST(request: Request) {
             total: count
         } }, { status: 200 })
     } catch (error) {
-        console.error("Error creating task:", error)
-        return NextResponse.json({ error: "Error creating task" }, { status: 500 })
+        console.error("创建任务失败:", error)
+        return NextResponse.json({ error: "创建任务失败" }, { status: 500 })
     }
 }
 
@@ -113,7 +112,7 @@ export async function GET(request: Request) {
 
         return NextResponse.json({ message: "ok", data: tasks }, { status: 200 })
     } catch (error) {
-        console.error("Error creating task:", error)
-        return NextResponse.json({ error: "Error creating task" }, { status: 500 })
+        console.error("查询任务详情失败:", error)
+        return NextResponse.json({ error: "查询任务详情失败" }, { status: 500 })
     }
 }

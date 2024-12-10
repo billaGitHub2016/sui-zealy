@@ -3,11 +3,13 @@ import { Database } from "@/types/supabase";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import TaskSubmissionDialog from "@/components/TaskSubmissionDialog";
-import TaskList from "@/components/TaskList";
 import { TaskListTable as MyTaskList } from "@/components/MyTaskList";
+import { RecordListTable as MyRecordList } from "@/components/MyRecordList";
+import { RecordListTable as MyReviewList } from "@/components/MyReviewList";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -19,19 +21,8 @@ export default async function Index() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return <div>User not found</div>;
+    redirect('/login?next=/overview')
   }
-
-  // const { data: models } = await supabase
-  //   .from("models")
-  //   .select(
-  //     `*, samples (
-  //     *
-  //   )`
-  //   )
-  //   .eq("user_id", user.id);
-
-  // return <ClientSideModelsList serverModels={models ?? []} />;
 
   return (
     <div className="container w-full px-4 py-8">
@@ -39,24 +30,31 @@ export default async function Index() {
         <TabsList>
           <TabsTrigger value="myTask">我的任务</TabsTrigger>
           <TabsTrigger value="myApply">我的申请</TabsTrigger>
+          <TabsTrigger value="myReview">待我审核</TabsTrigger>
         </TabsList>
-        <TabsContent
-          value="myTask"
-          forceMount
-          className="data-[state=inactive]:hidden"
-        >
-          <Suspense fallback={<TaskListSkeleton />}>
+        <Suspense fallback={<TaskListSkeleton />}>
+          <TabsContent
+            value="myTask"
+            forceMount
+            className="data-[state=inactive]:hidden"
+          >
             {/* <TaskSubmissionDialog /> */}
             <MyTaskList user={user}></MyTaskList>
-          </Suspense>
-        </TabsContent>
-        <TabsContent
-          value="myApply"
-          forceMount
-          className="data-[state=inactive]:hidden"
-        >
-          hahaha
-        </TabsContent>
+          </TabsContent>
+          <TabsContent
+            value="myApply"
+            forceMount
+            className="data-[state=inactive]:hidden"
+          >
+            <MyRecordList user={user}></MyRecordList>
+          </TabsContent>
+          <TabsContent
+            value="myReview"
+            forceMount
+            className="data-[state=inactive]:hidden">
+            <MyReviewList user={user}></MyReviewList>
+          </TabsContent>
+        </Suspense>
       </Tabs>
     </div>
   );

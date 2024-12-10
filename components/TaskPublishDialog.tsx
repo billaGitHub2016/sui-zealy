@@ -82,7 +82,7 @@ const TaskPublishDialog = (
           </DialogDescription> */}
         </DialogHeader>
         <div className="overflow-y-auto h-3/6">
-          <TaskDetailCard task={task} isLoading={loading}/>
+          <TaskDetailCard task={task} isLoading={loading} />
         </div>
         <DialogFooter className="">
           {task?.status === 0 && (

@@ -35,22 +35,7 @@ import TaskSubmissionDialog from "@/components/TaskSubmissionDialog";
 import TaskPublishDialog from "@/components/TaskPublishDialog";
 import SimpleAlert from "@/components/simple-alert";
 import { SUI_MIST, STATUS_MAP } from "@/config/constants";
-
-// // 模拟任务数据
-// const tasks = [
-//   { id: 1, title: "完成项目报告", status: "进行中", startDate: "2023-06-01", endDate: "2023-06-15", claimLimit: 3 },
-//   { id: 2, title: "设计新logo", status: "待审核", startDate: "2023-06-05", endDate: "2023-06-20", claimLimit: 1 },
-//   { id: 3, title: "更新网站内容", status: "已完成", startDate: "2023-05-25", endDate: "2023-06-10", claimLimit: 2 },
-//   { id: 4, title: "客户满意度调查", status: "进行中", startDate: "2023-06-10", endDate: "2023-06-30", claimLimit: 5 },
-//   { id: 5, title: "优化数据库查询", status: "待审核", startDate: "2023-06-15", endDate: "2023-07-05", claimLimit: 2 },
-//   { id: 6, title: "开发移动应用", status: "进行中", startDate: "2023-07-01", endDate: "2023-08-15", claimLimit: 4 },
-//   { id: 7, title: "员工培训计划", status: "待审核", startDate: "2023-07-10", endDate: "2023-07-25", claimLimit: 10 },
-//   { id: 8, title: "市场调研报告", status: "已完成", startDate: "2023-06-20", endDate: "2023-07-10", claimLimit: 2 },
-//   { id: 9, title: "产品发布会准备", status: "进行中", startDate: "2023-07-15", endDate: "2023-08-01", claimLimit: 6 },
-//   { id: 10, title: "年度财务审计", status: "待审核", startDate: "2023-08-01", endDate: "2023-08-31", claimLimit: 3 },
-//   { id: 11, title: "社交媒体营销活动", status: "进行中", startDate: "2023-07-20", endDate: "2023-08-20", claimLimit: 4 },
-//   { id: 12, title: "客户反馈分析", status: "已完成", startDate: "2023-07-05", endDate: "2023-07-20", claimLimit: 2 },
-// ]
+import { Skeleton } from "@/components/ui/skeleton";
 
 export async function fetchTasks({
   pageNo,
@@ -123,7 +108,7 @@ export function TaskListTable({ user }: { user: any }) {
       .finally(() => {
         setIsLoading(false);
       });
-  }
+  };
 
   const handleEdit = (id: string) => {
     console.log(`编辑任务 ${id}`);
@@ -176,9 +161,14 @@ export function TaskListTable({ user }: { user: any }) {
 
   return (
     <div className="w-full">
-      <TaskSubmissionDialog ref={form} taskId={editTaskId} submitSuccessCallback={getTaskByPage} />
+      <div className="mt-4"></div>
+      <TaskSubmissionDialog
+        ref={form}
+        taskId={editTaskId}
+        submitSuccessCallback={getTaskByPage}
+      />
       <TaskPublishDialog ref={publishForm} taskId={editTaskId} />
-
+      <div className="mt-4"></div>
       <Table>
         <TableHeader>
           <TableRow>
@@ -194,9 +184,7 @@ export function TaskListTable({ user }: { user: any }) {
           {isLoading ? (
             <TableRow>
               <TableCell colSpan={7} className="h-24 text-center">
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                </div>
+                <TaskListSkeleton />
               </TableCell>
             </TableRow>
           ) : tasks.length === 0 ? (
@@ -220,7 +208,7 @@ export function TaskListTable({ user }: { user: any }) {
                         : "secondary"
                     }
                   >
-                    {STATUS_MAP[task.status]}
+                    {STATUS_MAP[task.status as 0 | 1 | 2]}
                   </Badge>
                 </TableCell>
                 <TableCell>{(task.pool as number) / SUI_MIST}</TableCell>
@@ -237,16 +225,16 @@ export function TaskListTable({ user }: { user: any }) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>操作</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => handleEdit(task.id)}>
+                      <DropdownMenuItem onClick={() => handleEdit(task.id as unknown as string)}>
                         <Pencil className="mr-2 h-4 w-4" />
                         <span>编辑</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(task.id)}>
+                      <DropdownMenuItem onClick={() => handleDelete(task.id as unknown as string)}>
                         <Trash className="mr-2 h-4 w-4" />
                         <span>删除</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handlePublish(task.id)}>
+                      <DropdownMenuItem onClick={() => handlePublish(task.id as unknown as string)}>
                         <Send className="mr-2 h-4 w-4" />
                         <span>发布</span>
                       </DropdownMenuItem>
@@ -304,6 +292,20 @@ export function TaskListTable({ user }: { user: any }) {
           onCancel={() => setOpenAlert(false)}
         ></SimpleAlert>
       </div>
+    </div>
+  );
+}
+
+function TaskListSkeleton() {
+  return (
+    <div className="space-y-4">
+      {[...Array(2)].map((_, i) => (
+        <div key={i} className="border p-4 rounded-lg shadow">
+          <Skeleton className="h-6 w-3/4 mb-2" />
+          <Skeleton className="h-4 w-1/2 mb-2" />
+          <Skeleton className="h-4 w-1/4" />
+        </div>
+      ))}
     </div>
   );
 }

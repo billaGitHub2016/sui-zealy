@@ -16,13 +16,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             .select('*')
             .eq('id', id)
 
-        if (error) {
+        const { count: passRecordCount, error: passRecordCountError } = await supabase.from('records')
+            .select('id', { count: 'exact' })
+            .eq('task_id', id)
+            .eq('result', 1)
+
+        if (error || passRecordCountError) {
             throw error
         }
 
         let task = null
         if (data.length === 1) {
             task = data[0]
+            task.record_pass_count = passRecordCount
         }
 
         return NextResponse.json({ message: "ok", data: task }, { status: 200 })
@@ -84,7 +90,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         const status = formData.get("status") as unknown as number
         const attachments: File[] = []
         // const previews: string[] = []
-    
+
         for (const [key, value] of formData.entries()) {
             if (key.startsWith("attachment") && value instanceof File) {
                 attachments.push(value)
@@ -100,7 +106,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
                 const buffer = Buffer.from(bytes)
                 const fileName = `${Date.now()}-${index}-${attachment.name}`
                 const path = join("./public", "uploads", fileName)
-                await writeFile(path, buffer)
+                await writeFile(path, new Uint8Array(buffer))
                 return `/uploads/${fileName}`
             })
         )

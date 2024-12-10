@@ -39,7 +39,7 @@ export default async function Index({ params }: { params: { id: string } }) {
             ></TaskDetailCard>
           </div>
           <div className="w-2/5">
-            <TaskClaimForm task={task as unknown as Task}></TaskClaimForm>
+            <TaskClaimForm task={task as unknown as Task} user={user as User}></TaskClaimForm>
           </div>
         </div>
       </Suspense>

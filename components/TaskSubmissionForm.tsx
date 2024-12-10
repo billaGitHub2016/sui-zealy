@@ -151,7 +151,7 @@ const TaskSubmissionForm = (
             const keys = Object.keys(error);
             toast({
               title: "校验失败",
-              description: error[keys[0]]?.message,
+              description: error[keys[0] as keyof typeof error]?.message,
               variant: "destructive",
             });
           }
