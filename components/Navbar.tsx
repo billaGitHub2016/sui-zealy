@@ -43,34 +43,22 @@ export default async function Navbar() {
           <h2 className="font-bold text-xl">SUI-Zealy</h2>
         </Link>
       </div>
-      {user && (
-        <div className="hidden lg:flex flex-row gap-2">
-          <Link href="/overview">
-            <Button variant={"ghost"}>Home</Button>
-          </Link>
-          {packsIsEnabled && (
-            <Link href="/overview/packs">
-              <Button variant={"ghost"}>Packs</Button>
-            </Link>
-          )}
-          {stripeIsConfigured && (
-            <Link href="/get-credits">
-              <Button variant={"ghost"}>Get Credits</Button>
-            </Link>
-          )}
-        </div>
-      )}
+      <div className="hidden lg:flex flex-row gap-2">
+        <Link href="/overview">
+          <Button variant={"ghost"}>我的</Button>
+        </Link>
+        <Link href="/published-tasks">
+          <Button variant={"ghost"}>已发布的任务</Button>
+        </Link>
+      </div>
       <div className="flex gap-4 lg:ml-auto">
         {!user && (
           <Link href="/login">
             <Button variant={"ghost"}>Login / Signup</Button>
           </Link>
         )}
-        {/* {user && (
+        {user && (
           <div className="flex flex-row gap-4 text-center align-middle justify-center">
-            {stripeIsConfigured && (
-              <ClientSideCredits creditsRow={credits ? credits : null} />
-            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild className="cursor-pointer">
                 <AvatarIcon height={24} width={24} className="text-primary" />
@@ -92,7 +80,7 @@ export default async function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        )} */}
+        )}
       </div>
     </div>
   );
