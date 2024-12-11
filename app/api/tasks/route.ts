@@ -26,19 +26,37 @@ export async function PUT(request: Request) {
     }
 
     try {
+        const supabase = createRouteHandlerClient({ cookies });
+
         const attachmentUrls = await Promise.all(
+            // attachments.map(async (attachment, index) => {
+            //     const bytes = await attachment.arrayBuffer()
+            //     const buffer = Buffer.from(bytes)
+            //     const fileName = `${Date.now()}-${index}-${attachment.name}`
+            //     const path = join("./public", "uploads", fileName)
+            //     await writeFile(path, new Uint8Array(buffer))
+            //     return `/uploads/${fileName}`
+            // })
             attachments.map(async (attachment, index) => {
                 const bytes = await attachment.arrayBuffer()
                 const buffer = Buffer.from(bytes)
-                const fileName = `${Date.now()}-${index}-${attachment.name}`
-                const path = join("./public", "uploads", fileName)
-                await writeFile(path, new Uint8Array(buffer))
-                return `/uploads/${fileName}`
+                const fileName = `${Date.now()}-${index}.${attachment.name.split('.')[1]}`
+                // const path = join("./public", "uploads", fileName)
+                const { data, error } = await supabase.storage
+                    .from('task_images')
+                    .upload(fileName, buffer)
+                console.log('data = ', data)
+                if (error) {
+                    console.error('上传失败:', error)
+                }
+                if (data) {
+                    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${data.fullPath}`
+                }
+                return
+                // return `/uploads/${fileName}`
             })
         )
 
-
-        const supabase = createRouteHandlerClient({ cookies });
         const {
             data: { user },
         } = await supabase.auth.getUser();
@@ -84,12 +102,14 @@ export async function POST(request: Request) {
             throw error
         }
 
-        return NextResponse.json({ message: "ok", data: {
-            list: tasks,
-            pageNo: body.pageNo || 1,
-            pageSize,
-            total: count
-        } }, { status: 200 })
+        return NextResponse.json({
+            message: "ok", data: {
+                list: tasks,
+                pageNo: body.pageNo || 1,
+                pageSize,
+                total: count
+            }
+        }, { status: 200 })
     } catch (error) {
         console.error("创建任务失败:", error)
         return NextResponse.json({ error: "创建任务失败" }, { status: 500 })

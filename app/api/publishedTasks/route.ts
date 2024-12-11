@@ -7,7 +7,7 @@ export async function POST(request: Request) {
         const body = await request.json();
         const supabase = createPagesBrowserClient({ supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL, supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY });
         const { pageNo, pageSize, orderBy } = body;
-        const builder = supabase.rpc('get_published_tasks_v5', { offsetsize: (pageNo - 1) * pageSize, pagesize: pageSize, orderby: orderBy || 'created_at' })
+        const builder = supabase.rpc('get_published_tasks_v6', { offsetsize: (pageNo - 1) * pageSize, pagesize: pageSize, orderby: orderBy || 'created_at' })
 
         const { data: tasks, error } = await builder;
         if (error) {

@@ -78,6 +78,7 @@ const TaskSubmissionForm = (
 
   useImperativeHandle(ref, () => ({
     onSubmit,
+    resetForm,
   }));
 
   useEffect(() => {
@@ -130,6 +131,12 @@ const TaskSubmissionForm = (
       attachment: [],
     },
   });
+
+  const resetForm = () => {
+    debugger
+    form.reset();
+    setPreviews([]);
+  }
 
   const onePassReward = form.watch("one_pass_reward");
   const claimLimit = form.watch("claim_limit");

@@ -44,11 +44,11 @@ export default async function Navbar() {
         </Link>
       </div>
       <div className="hidden lg:flex flex-row gap-2">
-        <Link href="/overview">
-          <Button variant={"ghost"}>我的</Button>
-        </Link>
         <Link href="/published-tasks">
           <Button variant={"ghost"}>已发布的任务</Button>
+        </Link>
+        <Link href="/overview">
+          <Button variant={"ghost"}>我的</Button>
         </Link>
       </div>
       <div className="flex gap-4 lg:ml-auto">

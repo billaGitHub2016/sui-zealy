@@ -21,6 +21,9 @@ import {
 } from "@/components/ui/pagination";
 import { Task } from "@/types/task";
 import Link from "next/link";
+import AddressLink from "@/components/address-link";
+import { SUI_MIST, Two_Hours_Ms } from "@/config/constants";
+import { MIST_PER_SUI } from "@mysten/sui/dist/cjs/utils";
 
 type PublishTask = {
   description: string;
@@ -111,7 +114,7 @@ export default function PublishedTaskList() {
               const tags = [];
               if ((item.record_pass_count as number) > 0) {
                 tags.push({
-                  label: "已有申请通过",
+                  label: "有申请通过",
                   value: "hasRecordPass",
                   variant: "secondary",
                 });
@@ -128,6 +131,19 @@ export default function PublishedTaskList() {
                   variant: "outline",
                 });
               }
+
+              if (
+                item.publish_date &&
+                new Date(item.publish_date).getTime() - new Date().getTime() <
+                  Two_Hours_Ms
+              ) {
+                tags.push({
+                  label: "犹豫期内",
+                  value: "canBeWithdraw",
+                  variant: "secondary",
+                });
+              }
+
               return {
                 ...item,
                 tags,
@@ -146,18 +162,22 @@ export default function PublishedTaskList() {
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tasks.map((task) => (
-          <Card key={task.id} className="flex flex-col">
+          <Card key={task.id} className="flex flex-col transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-blue-100/50 hover:-translate-y-1">
             <CardHeader className="pb-3">
               <div className="flex flex-wrap gap-2 mb-3">
                 {task.tags.map((tag, index) => (
                   <Badge
                     key={index}
                     variant={(tag.variant as any) || "outline"}
-                    className={
+                    className={`${
                       tag.value === "hasRecordPass"
                         ? "bg-yellow-100 hover:bg-yellow-100"
                         : ""
-                    }
+                    }${
+                      tag.value === "canBeWithdraw"
+                        ? "bg-red-100 hover:bg-red-100"
+                        : ""
+                    }`}
                   >
                     {tag.label}
                   </Badge>
@@ -167,15 +187,30 @@ export default function PublishedTaskList() {
                 <h3 className="text-lg font-semibold">{task.name}</h3>
               </Link>
             </CardHeader>
-            <CardContent className="flex-grow">
-              <Link href={`/published-tasks/tasks/${task.id}`}>
-                <p className="text-sm text-gray-600">{task.description}</p>
-              </Link>
+            <CardContent className="flex-grow pt-3">
+              <p className="text-sm text-gray-600">奖池: {(task.pool as number) / SUI_MIST} SUI</p>
+              <p className="text-sm text-gray-600 mt-1">
+                已通过申请数/总数: {task.record_pass_count} / {task.claim_limit}
+              </p>
             </CardContent>
-            <CardFooter className="flex justify-between items-center pt-3 border-t">
+            <CardFooter className="flex flex-col items-start pt-3 border-t">
               <div className="text-sm text-gray-500">
-                创建者 <span className="text-blue-600">{task.address}</span> ·{" "}
-                {new Date(task.publish_date as string).toLocaleDateString()}
+                创建者:{" "}
+                <span className="text-blue-600">
+                  <AddressLink address={task.owner_address} type="account" />
+                </span>
+              </div>
+              <div className="text-sm text-gray-500">
+                发布日期:{" "}
+                {(task.publish_date &&
+                  new Date(task.publish_date as string).toLocaleString()) ||
+                  ""}
+              </div>
+              <div className="text-sm text-gray-500">
+                结束日期:{" "}
+                {(task.end_date &&
+                  new Date(task.end_date as string).toLocaleString()) ||
+                  ""}
               </div>
               {/* <Button variant="ghost" size="sm" className="space-x-1">
                 <ChevronUp className="h-4 w-4" />

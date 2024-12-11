@@ -19,3 +19,4 @@ export const RESULT_MAP = {
   [Pass]: '通过',
   [Fail]: '不通过'
 }
+export const Two_Hours_Ms = 60 * 1000 * 60 * 2

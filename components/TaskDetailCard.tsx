@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { forwardRef, Ref, useImperativeHandle, useState } from "react";
 import Image from "next/image";
 import {
   Card,
@@ -25,6 +25,7 @@ import { SUI_MIST, STATUS_MAP, REWARD_METHODS } from "@/config/constants";
 import { Transaction } from "@mysten/sui/transactions";
 import { MIST_PER_SUI } from "@mysten/sui/utils";
 import { toast } from "@/components/ui/use-toast";
+import { User } from "@supabase/supabase-js";
 
 interface TaskDetailProps {
   taskName: string;
@@ -53,18 +54,25 @@ export async function updateTask(updateTask: Partial<Task>): Promise<Task> {
   return result.data;
 }
 
-export default function TaskDetailCard({
-  task,
-  isLoading = false,
-  user,
-}: {
-  task: Task | null;
-  isLoading?: boolean;
-  user?: {
-    id: string;
-  };
-}) {
+function TaskDetailCard(
+  {
+    task,
+    isLoading = false,
+    user,
+  }: {
+    task: Task | null;
+    isLoading?: boolean;
+    user: User | null;
+  },
+  ref: Ref<{
+    handlePublish: () => void;
+  }>
+) {
   const [loading, setLoading] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    handlePublish,
+  }));
 
   const DetailItem = ({
     label,
@@ -96,7 +104,7 @@ export default function TaskDetailCard({
   });
   const handlePublish = () => {
     if (!task) {
-      return;
+      return Promise.reject();
     }
     if (task.status !== 0) {
       toast({
@@ -104,7 +112,7 @@ export default function TaskDetailCard({
         description: "任务不能发布",
         variant: "destructive",
       });
-      return;
+      return Promise.reject();
     }
     if (!account) {
       toast({
@@ -112,81 +120,88 @@ export default function TaskDetailCard({
         description: "请先连接钱包",
         variant: "destructive",
       });
-      return;
+      return Promise.reject();
     }
-    const txb = new Transaction();
+    return new Promise((resolve, reject) => {
+      const txb = new Transaction();
 
-    txb.setGasBudget(1000000000);
-    const [coin] = txb.splitCoins(txb.gas, [
-      // BigInt(task.pool as number),
-      task.pool as number,
-    ]);
+      txb.setGasBudget(1000000000);
+      const [coin] = txb.splitCoins(txb.gas, [
+        // BigInt(task.pool as number),
+        task.pool as number,
+      ]);
 
-    txb.moveCall({
-      target: `${process.env.NEXT_PUBLIC_PACKAGE_ID}::task::create_task`,
-      arguments: [
-        coin,
-        txb.pure.string(task.name as string),
-        txb.pure.u64(new Date(task.end_date as string).getTime()),
-        txb.pure.u8(task.reward_method as number),
-        txb.pure.u64(1),
-        txb.object("0x6"),
-      ],
-      // typeArguments: ['0x2::coin::Coin<0x2::sui::SUI>']
-      typeArguments: [],
-    });
+      txb.moveCall({
+        target: `${process.env.NEXT_PUBLIC_PACKAGE_ID}::task::create_task`,
+        arguments: [
+          coin,
+          txb.pure.string(task.name as string),
+          txb.pure.u64(new Date(task.end_date as string).getTime()),
+          txb.pure.u8(task.reward_method as number),
+          txb.pure.u64(1),
+          txb.object("0x6"),
+        ],
+        // typeArguments: ['0x2::coin::Coin<0x2::sui::SUI>']
+        typeArguments: [],
+      });
 
-    setLoading(true);
-    signAndExecute(
-      {
-        transaction: txb,
-      },
-      {
-        onSuccess: async (data) => {
-          console.log("transaction digest: " + JSON.stringify(data));
-          debugger;
-          if (
-            ((data.effects &&
-              data.effects.status.status) as unknown as string) !== "failure"
-          ) {
-            const taskAddress =
-              (data.effects?.mutated?.length as unknown as number) > 0 &&
-              (data.effects?.mutated as unknown as any)[0].reference.objectId;
-            updateTask({
-              id: task.id,
-              publish_date: new Date().toISOString().toLocaleString(),
-              status: 1,
-              owner_address: account.address,
-              address: taskAddress,
-            })
-              .then(() => {
-                toast({
-                  title: "发布成功",
-                  description: "任务发布成功，在犹豫期内可下架任务",
-                });
+      setLoading(true);
+      signAndExecute(
+        {
+          transaction: txb,
+        },
+        {
+          onSuccess: async (data) => {
+            console.log("transaction digest: " + JSON.stringify(data));
+            debugger;
+            if (
+              ((data.effects &&
+                data.effects.status.status) as unknown as string) !== "failure"
+            ) {
+              const taskAddress =
+                (data.effects?.mutated?.length as unknown as number) > 0 &&
+                (data.effects?.mutated as unknown as any)[0].reference.objectId;
+              updateTask({
+                id: task.id,
+                publish_date: new Date().toISOString().toLocaleString(),
+                status: 1,
+                owner_address: account.address,
+                address: taskAddress,
               })
-              .finally(() => {
-                setLoading(false);
+                .then(() => {
+                  toast({
+                    title: "发布成功",
+                    description: "任务发布成功，在犹豫期内可下架任务",
+                  });
+                  resolve("");
+                })
+                .catch((err) => {
+                  reject(err);
+                })
+                .finally(() => {
+                  setLoading(false);
+                });
+            } else {
+              toast({
+                title: "发布失败",
+                description: "发布链上任务失败，请稍后再试",
+                variant: "destructive",
               });
-          } else {
+            }
+          },
+          onError: (err) => {
+            console.log("transaction error: " + err);
             toast({
               title: "发布失败",
-              description: "发布链上任务失败，请稍后再试",
+              description: `发布链上任务失败:${err.message}，请稍后再试`,
               variant: "destructive",
             });
-          }
-        },
-        onError: (err) => {
-          console.log("transaction error: " + err);
-          toast({
-            title: "发布失败",
-            description: `发布链上任务失败:${err.message}，请稍后再试`,
-            variant: "destructive",
-          });
-          setLoading(false);
-        },
-      }
-    );
+            setLoading(false);
+            reject(err);
+          },
+        }
+      );
+    });
   };
 
   const handleClaim = () => {
@@ -263,10 +278,10 @@ export default function TaskDetailCard({
                 label="奖池金额"
                 value={(task.pool as number) / SUI_MIST + "SUI"}
               />
-              <DetailItem
+              {/* <DetailItem
                 label="申请通过总数"
                 value={task.claim_limit as number}
-              />
+              /> */}
               {task.reward_method === 1 && (
                 <DetailItem
                   label="单个申请奖励金额"
@@ -285,12 +300,16 @@ export default function TaskDetailCard({
                 value={new Date(task.created_at).toLocaleString()}
               />
               <DetailItem
-                label="任务开始日期"
-                value={new Date(task.start_date as string).toLocaleString()}
+                label="任务发布日期"
+                value={ (task.start_date && new Date(task.start_date as string).toLocaleString()) || "未发布" }
               />
               <DetailItem
                 label="任务结束日期"
                 value={new Date(task.end_date as string).toLocaleString()}
+              />
+              <DetailItem
+                label="已通过申请数/总数"
+                value={task.record_pass_count || 0 + "/" + task.claim_limit}
               />
             </div>
           </div>
@@ -337,11 +356,12 @@ export default function TaskDetailCard({
           )}
         </CardContent>
         <CardFooter>
-          {/* <ConnectButton className="bg-fuchsia-800"></ConnectButton> */}
-          <Button onClick={handlePublish}>测试发布</Button>
-          <Button onClick={handleClaim}>测试申请</Button>
+          {/* <Button onClick={handlePublish}>测试发布</Button>
+          <Button onClick={handleClaim}>测试申请</Button> */}
         </CardFooter>
       </Card>
     )
   );
 }
+
+export default forwardRef(TaskDetailCard);

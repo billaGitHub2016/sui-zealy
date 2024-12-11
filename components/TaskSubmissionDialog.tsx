@@ -18,8 +18,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import TaskSubmissionForm from "@/components/TaskSubmissionForm";
 import { Task } from "@/types/task";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 
 export async function fetchTask(id: string): Promise<Task> {
   const response = await fetch(`/api/tasks/${id}`);
@@ -49,6 +58,8 @@ const TaskSubmissionDialog = (
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [task, setTask] = useState<Task | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [isNewTask, setIsNewTask] = useState(false);
 
   useImperativeHandle(ref, () => ({
     setOpen,
@@ -56,19 +67,39 @@ const TaskSubmissionDialog = (
 
   const form = useRef<{
     onSubmit: Function;
+    resetForm: () => void;
   }>(null);
 
   useEffect(() => {
-    if (taskId && open) {
-      fetchTask(taskId).then((t) => {
-        console.log("task = ", t);
-        setTask(t);
-      });
+    if (open) {
+      if (taskId && !isNewTask) {
+        setLoading(true);
+        fetchTask(taskId)
+          .then((t) => {
+            setTask(t);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      }
+    } else {
+      form.current?.resetForm();
     }
-  }, [taskId, open]);
+  }, [taskId, open, isNewTask]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        setOpen(open);
+        if (open) {
+          setIsNewTask(true);
+        } else {
+          setIsNewTask(false);
+          setTask(null);
+        }
+      }}
+    >
       {hasTrigger && (
         <DialogTrigger asChild>
           <Button>创建新任务</Button>
@@ -83,40 +114,71 @@ const TaskSubmissionDialog = (
         <DialogHeader className="flex flex-col">
           <DialogTitle>{title}</DialogTitle>
           {/* <DialogDescription>
-            请填写以下表单来创建一个新的任务。所有字段都是必填的。
-          </DialogDescription> */}
+    请填写以下表单来创建一个新的任务。所有字段都是必填的。
+  </DialogDescription> */}
         </DialogHeader>
-        <div className="overflow-y-auto flex-1">
-          <TaskSubmissionForm
-            onSubmitSuccess={() => setOpen(false)}
-            ref={form}
-            task={task}
-          />
-        </div>
-        <DialogFooter className="">
-          <Button
-            type="submit"
-            onClick={() => {
-              console.log("submit");
-              if (form.current) {
-                setIsSubmitting(true);
-                form.current.onSubmit().then(() => {
-                  if (submitSuccessCallback) {
-                    submitSuccessCallback();
+        {loading ? (
+          <LoadingSkeleton />
+        ) : (
+          <>
+            <div className="overflow-y-auto flex-1">
+              <TaskSubmissionForm
+                onSubmitSuccess={() => setOpen(false)}
+                ref={form}
+                task={task}
+              />
+            </div>
+            <DialogFooter className="">
+              <Button
+                type="submit"
+                onClick={() => {
+                  console.log("submit");
+                  if (form.current) {
+                    setIsSubmitting(true);
+                    form.current
+                      .onSubmit()
+                      .then(() => {
+                        if (submitSuccessCallback) {
+                          submitSuccessCallback();
+                        }
+                      })
+                      .finally(() => {
+                        setIsSubmitting(false);
+                      });
                   }
-                }).finally(() => {
-                  setIsSubmitting(false);
-                });
-              }
-            }}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "提交中..." : "提交"}
-          </Button>
-        </DialogFooter>
+                }}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "提交中..." : "提交"}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
 };
+
+function LoadingSkeleton() {
+  return (
+    <Card className="w-full max-w-2xl mx-auto shadow-lg pt-4">
+      <CardContent className="space-y-6">
+        <Skeleton className="h-32 w-full" />
+        <Separator />
+        <div className="w-full">
+        <Skeleton className="h-32 w-full" />
+        </div>
+        <Separator />
+        <div className="w-full">
+        <Skeleton className="h-32 w-full" />
+        </div>
+        <Separator />
+        <div className="w-full">
+        <Skeleton className="h-32 w-full" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default forwardRef(TaskSubmissionDialog);

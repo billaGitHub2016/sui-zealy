@@ -36,6 +36,7 @@ import TaskPublishDialog from "@/components/TaskPublishDialog";
 import SimpleAlert from "@/components/simple-alert";
 import { SUI_MIST, STATUS_MAP } from "@/config/constants";
 import { Skeleton } from "@/components/ui/skeleton";
+import { User } from "@supabase/supabase-js";
 
 export async function fetchTasks({
   pageNo,
@@ -61,7 +62,6 @@ export async function fetchTasks({
 }
 
 export async function deleteTask(id: string): Promise<Task[]> {
-  debugger;
   const response = await fetch(`/api/tasks/${id}`, {
     method: "DELETE",
   });
@@ -72,7 +72,7 @@ export async function deleteTask(id: string): Promise<Task[]> {
   return result.data;
 }
 
-export function TaskListTable({ user }: { user: any }) {
+export function TaskListTable({ user }: { user: User }) {
   const [pageNo, setPageNo] = useState(1);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -167,7 +167,7 @@ export function TaskListTable({ user }: { user: any }) {
         taskId={editTaskId}
         submitSuccessCallback={getTaskByPage}
       />
-      <TaskPublishDialog ref={publishForm} taskId={editTaskId} />
+      <TaskPublishDialog ref={publishForm} taskId={editTaskId} user={user}/>
       <div className="mt-4"></div>
       <Table>
         <TableHeader>
