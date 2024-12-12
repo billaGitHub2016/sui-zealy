@@ -47,7 +47,7 @@ export async function PUT(request: Request) {
                 const bytes = await attachment.arrayBuffer()
                 const buffer = Buffer.from(bytes)
                 const fileName = `${Date.now()}-${index}.${attachment.name.split('.')[1]}`
-                const { data, error } = await supabase.storage
+                const { data, error }: { data: any, error: any } = await supabase.storage
                     .from('task_images')
                     .upload(fileName, buffer)
                 if (error) {

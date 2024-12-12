@@ -42,7 +42,7 @@ export async function PUT(request: Request) {
                 const buffer = Buffer.from(bytes)
                 const fileName = `${Date.now()}-${index}.${attachment.name.split('.')[1]}`
                 // const path = join("./public", "uploads", fileName)
-                const { data, error } = await supabase.storage
+                const { data, error }: { data: any, error: any } = await supabase.storage
                     .from('task_images')
                     .upload(fileName, buffer)
                 console.log('data = ', data)
