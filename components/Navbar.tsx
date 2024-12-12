@@ -13,7 +13,6 @@ import Link from "next/link";
 import { Button } from "./ui/button";
 import React from "react";
 import { Database } from "@/types/supabase";
-import ClientSideCredits from "./realtime/ClientSideCredits";
 
 export const dynamic = "force-dynamic";
 
