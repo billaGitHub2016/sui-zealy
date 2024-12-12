@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createPagesBrowserClient } from "@supabase/auth-helpers-nextjs";
+import { createPagesBrowserClient, createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 import { Published } from '@/config/constants';
 
 export async function POST(request: Request) {
@@ -28,6 +29,35 @@ export async function POST(request: Request) {
                 pageSize,
                 total: count
             }
+        }, { status: 200 })
+    } catch (error) {
+        console.error("查询已发布任务失败:", error)
+        return NextResponse.json({ error: "查询已发布任务失败" }, { status: 500 })
+    }
+}
+
+export async function PUT(request: Request) {
+    try {
+        const body = await request.json();
+        const supabase = createRouteHandlerClient({ cookies });
+
+        const { data, error } = await supabase
+            .from('tasks')
+            .update(body)
+            .eq('id', body.id)
+            .select()
+
+        if (error) {
+            throw error
+        }
+
+        let task = null
+        if (data.length === 1) {
+            task = data[0]
+        }
+
+        return NextResponse.json({
+            message: "ok", data: task
         }, { status: 200 })
     } catch (error) {
         console.error("查询已发布任务失败:", error)

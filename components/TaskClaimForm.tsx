@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils";
 import { DateBefore } from "react-day-picker";
 import { Task } from "@/types/task";
 import { User } from "@supabase/supabase-js";
+import { Transaction } from "@mysten/sui/transactions";
 
 const SUI_MIST = 1000000000;
 
@@ -63,7 +64,6 @@ const TaskClaimForm = (
 ) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
-  const account = useCurrentAccount();
 
   useImperativeHandle(ref, () => ({
     onSubmit,
@@ -80,6 +80,26 @@ const TaskClaimForm = (
       attachments: [],
     },
   });
+
+  const account = useCurrentAccount();
+  const suiClient = useSuiClient();
+  const { mutate: signAndExecute } = useSignAndExecuteTransaction({
+    execute: async ({ bytes, signature }) =>
+      await suiClient.executeTransactionBlock({
+        transactionBlock: bytes,
+        signature,
+        options: {
+          // Raw effects are required so the effects can be reported back to the wallet
+          showRawEffects: true,
+          showEffects: true,
+          showEvents: true,
+        },
+      }),
+  });
+
+  const addRecord = async (values: any) => {
+    
+  }
 
   async function onSubmit() {
     if (!task) {
@@ -133,29 +153,79 @@ const TaskClaimForm = (
       }
 
       const values = form.getValues();
-      const formData = new FormData();
-      formData.append("desc", values.desc);
-      values.attachments.forEach((file, index) => {
-        formData.append(`attachments${index}`, file);
-      });
-      formData.append("wallet_address", account.address);
-      formData.append("task_id", task?.id as unknown as string);
+      const txb = new Transaction();
+      txb.setGasBudget(100000000);
 
-      const response = await fetch("/api/claimTask", {
-        method: "PUT",
-        body: formData,
-      });
+      return await new Promise((resolve, reject) => {
+        txb.moveCall({
+          target: `${process.env.NEXT_PUBLIC_PACKAGE_ID}::task::add_task_record`,
+          arguments: [
+            txb.object(task.address as string),
+            txb.pure.string(values.desc as string),
+            txb.pure.vector('string', ['1', '2']),
+            txb.object("0x6"),
+          ],
+          typeArguments: [],
+        });
+        signAndExecute(
+          {
+            transaction: txb,
+          },
+          {
+            onSuccess: async (data) => {
+              if (
+                ((data.effects &&
+                  data.effects.status.status) as unknown as string) === "success"
+              ) {
+                const record_address =
+                  data.effects?.mutated && Array.isArray(data.effects.mutated) && (data.effects.mutated?.length > 0) && (data.effects.mutated[0].reference as any).objectId
+  
+                  const formData = new FormData();
+                  formData.append("desc", values.desc);
+                  values.attachments.forEach((file: File, index: number) => {
+                    formData.append(`attachments${index}`, file);
+                  });
+                  formData.append("wallet_address", account.address);
+                  formData.append("task_id", task?.id as unknown as string);
+                  formData.append("record_address", record_address as string);
+            
+                  const response = await fetch("/api/claimTask", {
+                    method: "PUT",
+                    body: formData,
+                  });
+            
+                  if (!response.ok) {
+                    const res = await response.json();
+                    reject(new Error(res.message));
+                  }
 
-      if (!response.ok) {
-        const res = await response.json();
-        throw new Error(res.message);
-      }
-
-      toast({
-        title: "申请提交成功",
-        description: "您的申请已提交，请耐心等待审核结果。",
-      });
-      onSubmitSuccess && onSubmitSuccess();
+                  resolve('');
+            
+                  toast({
+                    title: "申请提交成功",
+                    description: "您的申请已提交，请耐心等待审核结果。",
+                  });
+              } else {
+                toast({
+                  title: "发布失败",
+                  description: "发布链上任务失败，请稍后再试",
+                  variant: "destructive",
+                });
+                reject(new Error("发布链上任务失败，请稍后再试"));
+              }
+            },
+            onError: (err) => {
+              console.log("transaction error: " + err);
+              toast({
+                title: "发布失败",
+                description: `发布链上任务失败:${err.message}，请稍后再试`,
+                variant: "destructive",
+              });
+              reject(err);
+            },
+          }
+        );
+      })
     } catch (error: any) {
       toast({
         title: "申请提交失败",

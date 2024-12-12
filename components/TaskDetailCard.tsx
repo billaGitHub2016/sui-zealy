@@ -34,18 +34,21 @@ interface TaskDetailProps {
 }
 
 export async function updateTask(updateTask: Partial<Task>): Promise<Task> {
-  const formData = new FormData();
-  type TaskFields = keyof Task;
-  for (const key in updateTask) {
-    if (Object.prototype.hasOwnProperty.call(updateTask, key)) {
-      const element = updateTask[key as TaskFields];
-      formData.append(key, element as string);
-    }
-  }
+  // const formData = new FormData();
+  // type TaskFields = keyof Task;
+  // for (const key in updateTask) {
+  //   if (Object.prototype.hasOwnProperty.call(updateTask, key)) {
+  //     const element = updateTask[key as TaskFields];
+  //     formData.append(key, element as string);
+  //   }
+  // }
 
-  const response = await fetch(`/api/tasks/${updateTask.id}`, {
-    method: "POST",
-    body: formData,
+  const response = await fetch(`/api/publishedTasks`, {
+    method: "PUT",
+    body: JSON.stringify(updateTask),
+    headers: {
+      "Content-Type": "application/json",
+    }
   });
   if (!response.ok) {
     throw new Error("更新任务失败");
@@ -125,7 +128,7 @@ function TaskDetailCard(
     return new Promise((resolve, reject) => {
       const txb = new Transaction();
 
-      txb.setGasBudget(1000000000);
+      txb.setGasBudget(100000000);
       const [coin] = txb.splitCoins(txb.gas, [
         // BigInt(task.pool as number),
         task.pool as number,
@@ -145,6 +148,7 @@ function TaskDetailCard(
         typeArguments: [],
       });
 
+      debugger
       setLoading(true);
       signAndExecute(
         {
@@ -156,17 +160,19 @@ function TaskDetailCard(
             debugger;
             if (
               ((data.effects &&
-                data.effects.status.status) as unknown as string) !== "failure"
+                data.effects.status.status) as unknown as string) === "success"
             ) {
               const taskAddress =
-                (data.effects?.mutated?.length as unknown as number) > 0 &&
-                (data.effects?.mutated as unknown as any)[0].reference.objectId;
+                data.events && Array.isArray(data.events) && (data.events.length > 0) && (data.events[0].parsedJson as any).task_id
+              const taskAdminCap =
+                data.events && Array.isArray(data.events) && (data.events.length > 0) && (data.events[0].parsedJson as any).task_cap
               updateTask({
                 id: task.id,
                 publish_date: new Date().toISOString().toLocaleString(),
                 status: 1,
                 owner_address: account.address,
                 address: taskAddress,
+                task_admin_cap_address: taskAdminCap,
               })
                 .then(() => {
                   toast({
