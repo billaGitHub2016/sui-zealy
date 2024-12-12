@@ -112,6 +112,7 @@ export function RecordListTable({ user }: { user: any }) {
             <TableHead>审核结果</TableHead>
             <TableHead>审核时间</TableHead>
             <TableHead>审核回复</TableHead>
+            <TableHead>交易ID</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -183,6 +184,12 @@ export function RecordListTable({ user }: { user: any }) {
                     : ""}
                 </TableCell>
                 <TableCell>{record.comment}</TableCell>
+                <TableCell>
+                  <AddressLink
+                    address={record.reward_digest}
+                    type="tx"
+                  ></AddressLink>
+                </TableCell>
               </TableRow>
             ))
           )}
@@ -216,7 +223,7 @@ export function RecordListTable({ user }: { user: any }) {
                 onClick={() =>
                   setPageNo((prev) => Math.min(prev + 1, totalPage))
                 }
-                aria-disabled={pageNo === 1}
+                aria-disabled={totalPage === 1}
                 className="aria-disabled:bg-slate-50 aria-disabled:text-gray-500 aria-disabled:cursor-not-allowed"
               />
             </PaginationItem>

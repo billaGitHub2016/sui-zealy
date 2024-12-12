@@ -207,7 +207,7 @@ export function RecordListTable({ user }: { user: any }) {
                 onClick={() =>
                   setPageNo((prev) => Math.min(prev + 1, totalPage))
                 }
-                aria-disabled={pageNo === 1}
+                aria-disabled={totalPage === 1}
                 className="aria-disabled:bg-slate-50 aria-disabled:text-gray-500 aria-disabled:cursor-not-allowed"
               />
             </PaginationItem>

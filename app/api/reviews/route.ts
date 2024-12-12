@@ -48,6 +48,7 @@ export async function PUT(request: Request) {
     const id = formData.get("id") as string
     const comment = formData.get("comment") as string
     const result = formData.get("result") as string
+    const reward_digest = formData.get("reward_digest") as string
 
     try {
         const supabase = createRouteHandlerClient({ cookies });
@@ -80,7 +81,8 @@ export async function PUT(request: Request) {
                 .update({
                     comment,
                     result,
-                    check_date: new Date().toLocaleString()
+                    reward_digest,
+                    check_date: new Date().toISOString().toLocaleString(),
                 })
                 .eq('id', id)
                 .select()

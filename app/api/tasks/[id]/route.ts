@@ -104,16 +104,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             attachments.map(async (attachment, index) => {
                 const bytes = await attachment.arrayBuffer()
                 const buffer = Buffer.from(bytes)
-                const fileName = `${Date.now()}-${index}-${attachment.name}`
-                const path = join("./public", "uploads", fileName)
-                await writeFile(path, new Uint8Array(buffer))
-                return `/uploads/${fileName}`
+                const fileName = `${Date.now()}-${index}.${attachment.name.split('.')[1]}`
+                const { data, error } = await supabase.storage
+                    .from('task_images')
+                    .upload(fileName, buffer)
+                if (error) {
+                    console.error('上传失败:', error)
+                }
+                if (data) {
+                    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${data.fullPath}`
+                }
+                return []
             })
         )
 
         const update: Partial<Task> = { name, desc, reward_method, claim_limit, pool, start_date, end_date }
         if (attachments.length > 0) {
-            update.attachments = attachmentUrls
+            update.attachments = attachmentUrls as string[]
         }
         if (typeof status === 'number') {
             update.status = status

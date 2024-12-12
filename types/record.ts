@@ -9,4 +9,6 @@ export type Record = {
     result: number
     check_date: string | null
     comment: string | null
+    record_address: string | null
+    reward_digest: string | null
 }

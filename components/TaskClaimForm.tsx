@@ -10,12 +10,6 @@ import {
 import { ControllerRenderProps, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import {
-  ConnectButton,
-  useCurrentAccount,
-  useSignAndExecuteTransaction,
-  useSuiClient,
-} from "@mysten/dapp-kit";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -37,6 +31,12 @@ import { cn } from "@/lib/utils";
 import { DateBefore } from "react-day-picker";
 import { Task } from "@/types/task";
 import { User } from "@supabase/supabase-js";
+import {
+  ConnectButton,
+  useCurrentAccount,
+  useSignAndExecuteTransaction,
+  useSuiClient,
+} from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 
 const SUI_MIST = 1000000000;
@@ -173,12 +173,13 @@ const TaskClaimForm = (
           },
           {
             onSuccess: async (data) => {
+              console.log('claim = ', data);
               if (
                 ((data.effects &&
                   data.effects.status.status) as unknown as string) === "success"
               ) {
-                const record_address =
-                  data.effects?.mutated && Array.isArray(data.effects.mutated) && (data.effects.mutated?.length > 0) && (data.effects.mutated[0].reference as any).objectId
+                let record_address =
+                  data.effects?.created && Array.isArray(data.effects.created) && (data.effects.created?.length > 0) && (data.effects.created[0].reference as any).objectId
   
                   const formData = new FormData();
                   formData.append("desc", values.desc);

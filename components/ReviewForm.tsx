@@ -16,6 +16,7 @@ import {
   useSignAndExecuteTransaction,
   useSuiClient,
 } from "@mysten/dapp-kit";
+import { Transaction } from "@mysten/sui/transactions";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -39,6 +40,7 @@ import { Record } from "@/types/record";
 import { Task } from "@/types/task";
 import { User } from "@supabase/supabase-js";
 import { Pass, Fail, RESULT_MAP } from '@/config/constants'
+import { bcs, fromHEX, toHEX } from '@mysten/bcs';
 
 const formSchema = z.object({
   result: z.number().refine((v) => v === Pass || v === Fail, {
@@ -64,7 +66,6 @@ const ReviewForm = (
   }>
 ) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const account = useCurrentAccount();
 
   useImperativeHandle(ref, () => ({
     onSubmit,
@@ -77,6 +78,21 @@ const ReviewForm = (
     },
   });
 
+  const account = useCurrentAccount();
+  const suiClient = useSuiClient();
+  const { mutate: signAndExecute } = useSignAndExecuteTransaction({
+    execute: async ({ bytes, signature }) =>
+      await suiClient.executeTransactionBlock({
+        transactionBlock: bytes,
+        signature,
+        options: {
+          // Raw effects are required so the effects can be reported back to the wallet
+          showRawEffects: true,
+          showEffects: true,
+          showEvents: true,
+        },
+      }),
+  });
   async function onSubmit() {
     if (!record) {
       return;
@@ -128,27 +144,77 @@ const ReviewForm = (
         return;
       }
 
-      const values = form.getValues();
-      const formData = new FormData();
-      formData.append("result", values.result + '');
-      formData.append("comment", values.comment);
-      formData.append("id", record.id + '');
+      const txb = new Transaction();
+      txb.setGasBudget(100000000);
 
-      const response = await fetch("/api/reviews", {
-        method: "PUT",
-        body: formData,
-      });
+      return await new Promise((resolve, reject) => {
+        const values = form.getValues();
+        const record_address = record.record_address as string
+        // const UID = bcs.fixedArray(32, bcs.u8()).transform({
+        //   input: (id: string) => fromHEX(id),
+        //   output: (id: string) => toHEX(Uint8Array.from(id)),
+        // });
 
-      if (!response.ok) {
-        const res = await response.json();
-        throw new Error(res.message);
-      }
+        txb.moveCall({
+          target: `${process.env.NEXT_PUBLIC_PACKAGE_ID}::task::handle_claim_task_record`,
+          arguments: [
+            txb.object(task.address as string),
+            // txb.pure(bcs.vector(bcs.U32).serialize(numberArray)),
+            txb.pure.address(record_address),
+            // txb.pure(UID.serialize(record_address).toBytes()),
+            txb.pure.u8(values.result),
+            txb.pure.string(values.comment as string),
+            txb.object(task.task_admin_cap_address as string),
+            txb.object("0x6"),
+          ],
+          typeArguments: [],
+        });
+        signAndExecute(
+          {
+            transaction: txb,
+          },
+          {
+            onSuccess: async (data) => {
+              debugger
+              console.log('review data = ', data)
+              if (
+                ((data.effects &&
+                  data.effects.status.status) as unknown as string) === "success"
+              ) {
+                let reward_digest = data.digest;
 
-      toast({
-        title: "审核提交成功",
-        description: "审核提交成功，奖励已发放",
-      });
-      onSubmitSuccess && onSubmitSuccess();
+                const formData = new FormData();
+                formData.append("result", values.result + '');
+                formData.append("comment", values.comment);
+                formData.append("id", record.id + '');
+                formData.append("reward_digest", reward_digest);
+
+                const response = await fetch("/api/reviews", {
+                  method: "PUT",
+                  body: formData,
+                });
+
+                if (!response.ok) {
+                  const res = await response.json();
+                  throw new Error(res.message);
+                }
+
+                toast({
+                  title: "审核提交成功",
+                  description: "审核提交成功，奖励已发放",
+                });
+                onSubmitSuccess && onSubmitSuccess();
+                resolve('');
+              } else {
+                reject(new Error("链上数据提交失败，请稍后再试"));
+              }
+            },
+            onError: (err: any) => {
+              reject(err);
+            },
+          }
+        );
+      })
     } catch (error: any) {
       toast({
         title: "审核提交失败",
@@ -164,7 +230,7 @@ const ReviewForm = (
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-      <FormField
+        <FormField
           control={form.control}
           name="result"
           render={({ field }) => (
@@ -186,7 +252,7 @@ const ReviewForm = (
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="2" id="r2" />
                       <Label htmlFor="r2">
-                      {RESULT_MAP[2]}
+                        {RESULT_MAP[2]}
                       </Label>
                     </div>
                   </RadioGroup>

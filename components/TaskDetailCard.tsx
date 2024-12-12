@@ -75,6 +75,7 @@ function TaskDetailCard(
 
   useImperativeHandle(ref, () => ({
     handlePublish,
+    handleWithdraw
   }));
 
   const DetailItem = ({
@@ -210,26 +211,108 @@ function TaskDetailCard(
     });
   };
 
-  const handleClaim = () => {
+  const handleWithdraw = () => {
     if (!task) {
-      return;
+      return Promise.reject();
     }
-    if (task.status !== 1) {
+    if (!account) {
       toast({
         title: "校验失败",
-        description: "任务不能申请",
+        description: "请先连接钱包",
         variant: "destructive",
       });
-      return;
+      return Promise.reject();
     }
-    if (user?.id === task.user_id) {
-      toast({
-        title: "校验失败",
-        description: "不能申请自己的任务",
-        variant: "destructive",
+    return new Promise((resolve, reject) => {
+      const txb = new Transaction();
+
+      txb.setGasBudget(100000000);
+      txb.moveCall({
+        target: `${process.env.NEXT_PUBLIC_PACKAGE_ID}::task::withdraw_task`,
+        arguments: [
+          txb.object(task.address as string),
+          txb.object(task.task_admin_cap_address as string),
+          txb.object("0x6"),
+        ],
+        typeArguments: [],
       });
-      return;
-    }
+      txb.moveCall({
+        target: `${process.env.NEXT_PUBLIC_PACKAGE_ID}::task::remove_all_task_records`,
+        arguments: [
+          txb.object(task.address as string),
+          txb.object(task.task_admin_cap_address as string),
+          txb.object("0x6"),
+        ],
+        typeArguments: [],
+      });
+      txb.moveCall({
+        target: `${process.env.NEXT_PUBLIC_PACKAGE_ID}::task::remove_task`,
+        arguments: [
+          txb.object(task.address as string),
+          txb.object(task.task_admin_cap_address as string),
+          txb.object("0x6"),
+        ],
+        typeArguments: [],
+      });
+
+      setLoading(true);
+      signAndExecute(
+        {
+          transaction: txb,
+        },
+        {
+          onSuccess: async (data) => {
+            console.log("withdraw digest: " + JSON.stringify(data));
+            debugger;
+            if (
+              ((data.effects &&
+                data.effects.status.status) as unknown as string) === "success"
+            ) {
+              toast({
+                title: "提现成功",
+                description: "任务提现成功，链上任务数据已删除",
+              });
+              updateTask({
+                id: task.id,
+                status: 0
+              })
+                .then(() => {
+                  resolve("");
+                })
+                .catch((err) => {
+                  toast({
+                    title: "提示",
+                    description: "更新任务信息失败",
+                    variant: "destructive",
+                  });
+                  reject(err);
+                })
+                .finally(() => {
+                  setLoading(false);
+                });
+            } else {
+              toast({
+                title: "提现失败",
+                description: "链上数据提现失败，请稍后再试",
+                variant: "destructive",
+              });
+              setLoading(false);
+              reject(new Error("提现失败"));
+            }
+          },
+          onError: (err) => {
+            console.log("transaction error: " + err);
+            toast({
+              title: "提现失败",
+              description: `链上数据提现失败:${err.message}，请稍后再试`,
+              variant: "destructive",
+            });
+            setLoading(false);
+            reject(err);
+          },
+        }
+      );
+    });
   };
 
   if (isLoading) {
@@ -315,7 +398,7 @@ function TaskDetailCard(
               />
               <DetailItem
                 label="已通过申请数/总数"
-                value={task.record_pass_count || 0 + "/" + task.claim_limit}
+                value={(task.record_pass_count || 0) + "/" + task.claim_limit}
               />
             </div>
           </div>

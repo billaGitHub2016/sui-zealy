@@ -24,6 +24,7 @@ import Link from "next/link";
 import AddressLink from "@/components/address-link";
 import { SUI_MIST, Two_Hours_Ms } from "@/config/constants";
 import { MIST_PER_SUI } from "@mysten/sui/dist/cjs/utils";
+import { Skeleton } from "./ui/skeleton";
 
 type PublishTask = {
   description: string;
@@ -71,7 +72,7 @@ type PublishTask = {
 export async function fetchTasks({
   pageNo,
   pageSize = 6,
-  orderBy = "created_at",
+  orderBy = "publish_date",
 }: {
   pageNo: number;
   pageSize?: number;
@@ -134,7 +135,7 @@ export default function PublishedTaskList() {
 
               if (
                 item.publish_date &&
-                new Date(item.publish_date).getTime() - new Date().getTime() <
+                new Date().getTime() - new Date(item.publish_date).getTime() <
                   Two_Hours_Ms
               ) {
                 tags.push({
@@ -161,7 +162,7 @@ export default function PublishedTaskList() {
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tasks.map((task) => (
+        {isLoading ? (<TaskListSkeleton/>) : (tasks.map((task) => (
           <Card key={task.id} className="flex flex-col transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-blue-100/50 hover:-translate-y-1">
             <CardHeader className="pb-3">
               <div className="flex flex-wrap gap-2 mb-3">
@@ -195,9 +196,9 @@ export default function PublishedTaskList() {
             </CardContent>
             <CardFooter className="flex flex-col items-start pt-3 border-t">
               <div className="text-sm text-gray-500">
-                创建者:{" "}
+                任务ID:{" "}
                 <span className="text-blue-600">
-                  <AddressLink address={task.owner_address} type="account" />
+                  <AddressLink address={task.address} type="object" />
                 </span>
               </div>
               <div className="text-sm text-gray-500">
@@ -218,7 +219,7 @@ export default function PublishedTaskList() {
               </Button> */}
             </CardFooter>
           </Card>
-        ))}
+        )))}
       </div>
 
       <div
@@ -249,13 +250,27 @@ export default function PublishedTaskList() {
                 onClick={() =>
                   setPageNo((prev) => Math.min(prev + 1, totalPage))
                 }
-                aria-disabled={pageNo === 1}
+                aria-disabled={totalPage === 1}
                 className="aria-disabled:bg-slate-50 aria-disabled:text-gray-500 aria-disabled:cursor-not-allowed"
               />
             </PaginationItem>
           </PaginationContent>
         </Pagination>
       </div>
+    </div>
+  );
+}
+
+function TaskListSkeleton() {
+  return (
+    <div className="space-y-4 w-full col-span-3">
+      {[...Array(2)].map((_, i) => (
+        <div key={i} className="border p-4 rounded-lg shadow">
+          <Skeleton className="h-6 w-full mb-2" />
+          <Skeleton className="h-4 w-1/2 mb-2" />
+          <Skeleton className="h-4 w-1/4" />
+        </div>
+      ))}
     </div>
   );
 }

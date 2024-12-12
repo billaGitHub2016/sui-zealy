@@ -9,6 +9,7 @@ export async function PUT(request: Request) {
     const desc = formData.get("desc") as string
     const task_id = formData.get("task_id") as string
     const wallet_address = formData.get("wallet_address") as string
+    const record_address = formData.get("record_address") as string
     const attachments: File[] = []
 
     for (const [key, value] of formData.entries()) {
@@ -38,17 +39,24 @@ export async function PUT(request: Request) {
         }
 
         if (waitingRecord.length > 0) {
-            return NextResponse.json({ message: "您已提交过申请，请等待审核" }, { status: 400 })
+            return NextResponse.json({ message: "您已提交过申请，请耐心等待审核" }, { status: 400 })
         }
 
         const attachmentUrls = await Promise.all(
             attachments.map(async (attachment, index) => {
                 const bytes = await attachment.arrayBuffer()
                 const buffer = Buffer.from(bytes)
-                const fileName = `${Date.now()}-${index}-${attachment.name}`
-                const path = join("./public", "uploads", fileName)
-                await writeFile(path, new Uint8Array(buffer))
-                return `/uploads/${fileName}`
+                const fileName = `${Date.now()}-${index}.${attachment.name.split('.')[1]}`
+                const { data, error } = await supabase.storage
+                    .from('task_images')
+                    .upload(fileName, buffer)
+                if (error) {
+                    console.error('上传失败:', error)
+                }
+                if (data) {
+                    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${data.fullPath}`
+                }
+                return
             })
         )
 
@@ -56,7 +64,7 @@ export async function PUT(request: Request) {
             const { data, error } = await supabase
                 .from('records')
                 .insert([
-                    { desc, result: 0, user_id: user.id, attachments: attachmentUrls, task_id, wallet_address },
+                    { desc, result: 0, user_id: user.id, attachments: attachmentUrls, task_id, wallet_address, record_address },
                 ])
                 .select()
             if (error) {

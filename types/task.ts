@@ -16,5 +16,5 @@ export type Task = {
     user_id: string
     record_count?: number | null
     record_pass_count?: number | null
-    task_admin_cap_address: string | null
+    task_admin_cap_address?: string | null
 }

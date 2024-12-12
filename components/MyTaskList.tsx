@@ -18,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash, Send } from "lucide-react";
+import { MoreHorizontal, Pencil, Bitcoin, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Pagination,
@@ -34,9 +34,10 @@ import { Task } from "@/types/task";
 import TaskSubmissionDialog from "@/components/TaskSubmissionDialog";
 import TaskPublishDialog from "@/components/TaskPublishDialog";
 import SimpleAlert from "@/components/simple-alert";
-import { SUI_MIST, STATUS_MAP } from "@/config/constants";
+import { SUI_MIST, STATUS_MAP, Two_Hours_Ms } from "@/config/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "@supabase/supabase-js";
+import AddressLink from "./address-link";
 
 export async function fetchTasks({
   pageNo,
@@ -118,12 +119,10 @@ export function TaskListTable({ user }: { user: User }) {
     }
   };
 
-  const handleDelete = (id: string) => {
-    console.log(`删除任务 ${id}`);
+  const handleWithdraw = (id: string) => {
+    console.log(`提现 ${id}`);
     setEditTaskId(id);
-    setOpenAlert(true);
-    setAlertTips("确定要删除该任务吗？");
-    setOperation("delete");
+    publishForm.current?.setOpen(true);
   };
 
   const handlePublish = (id: string) => {
@@ -177,6 +176,8 @@ export function TaskListTable({ user }: { user: User }) {
             <TableHead>状态</TableHead>
             <TableHead>奖池(SUI)</TableHead>
             <TableHead>创建时间</TableHead>
+            <TableHead>发布时间</TableHead>
+            <TableHead>链上ID</TableHead>
             <TableHead className="text-right">操作</TableHead>
           </TableRow>
         </TableHeader>
@@ -215,6 +216,15 @@ export function TaskListTable({ user }: { user: User }) {
                 <TableCell>
                   {new Date(task.created_at).toLocaleString()}
                 </TableCell>
+                <TableCell>
+                  {task.publish_date && new Date(task.publish_date).toLocaleString() || ''}
+                </TableCell>
+                <TableCell>
+                  {task.address && <AddressLink
+                    address={task.address}
+                    type="object"
+                  ></AddressLink>}
+                </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -229,9 +239,9 @@ export function TaskListTable({ user }: { user: User }) {
                         <Pencil className="mr-2 h-4 w-4" />
                         <span>编辑</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(task.id as unknown as string)}>
-                        <Trash className="mr-2 h-4 w-4" />
-                        <span>删除</span>
+                      <DropdownMenuItem onClick={() => handleWithdraw(task.id as unknown as string)}>
+                        <Bitcoin className="mr-2 h-4 w-4" />
+                        <span>提现</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => handlePublish(task.id as unknown as string)}>
@@ -274,7 +284,7 @@ export function TaskListTable({ user }: { user: User }) {
                 onClick={() =>
                   setPageNo((prev) => Math.min(prev + 1, totalPage))
                 }
-                aria-disabled={pageNo === 1}
+                aria-disabled={totalPage === 1}
                 className="aria-disabled:bg-slate-50 aria-disabled:text-gray-500 aria-disabled:cursor-not-allowed"
               />
             </PaginationItem>
