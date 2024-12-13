@@ -112,7 +112,7 @@ const TaskSubmissionDialog = (
         }}
       >
         <DialogHeader className="flex flex-col">
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{isNewTask ? '创建任务' : title}</DialogTitle>
           {/* <DialogDescription>
     请填写以下表单来创建一个新的任务。所有字段都是必填的。
   </DialogDescription> */}

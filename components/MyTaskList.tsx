@@ -76,7 +76,7 @@ export async function deleteTask(id: string): Promise<Task[]> {
 export function TaskListTable({ user }: { user: User }) {
   const [pageNo, setPageNo] = useState(1);
   const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const pageSize = 10;
   const totalPage = Math.ceil(total / pageSize);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -84,6 +84,9 @@ export function TaskListTable({ user }: { user: User }) {
   const [openAlert, setOpenAlert] = useState(false);
   const [operation, setOperation] = useState("");
   const [alertTips, setAlertTips] = useState("");
+  const [publishDialogTitle, setPublishDialogTitle] = useState("");
+  const [submitTaskDialogTitle, setSubmitTaskDialogTitle] =
+    useState("创建任务");
   const form = useRef<{ setOpen: Function }>(null);
   const publishForm = useRef<{ setOpen: Function }>(null);
 
@@ -112,7 +115,7 @@ export function TaskListTable({ user }: { user: User }) {
   };
 
   const handleEdit = (id: string) => {
-    const editTask = tasks.find(item => item.id === parseInt(id))
+    const editTask = tasks.find((item) => item.id === parseInt(id));
     if (editTask?.status !== Draft) {
       toast({
         title: "校验失败",
@@ -122,6 +125,7 @@ export function TaskListTable({ user }: { user: User }) {
     }
     console.log(`编辑任务 ${id}`);
     setEditTaskId(id);
+    setSubmitTaskDialogTitle("编辑任务");
     if (form.current) {
       form.current.setOpen(true);
     }
@@ -130,11 +134,12 @@ export function TaskListTable({ user }: { user: User }) {
   const handleWithdraw = (id: string) => {
     console.log(`提现 ${id}`);
     setEditTaskId(id);
+    setPublishDialogTitle("任务提现");
     publishForm.current?.setOpen(true);
   };
 
   const handlePublish = (id: string) => {
-    const editTask = tasks.find(item => item.id === parseInt(id))
+    const editTask = tasks.find((item) => item.id === parseInt(id));
     if (editTask?.status !== Draft) {
       toast({
         title: "校验失败",
@@ -144,6 +149,7 @@ export function TaskListTable({ user }: { user: User }) {
     }
     console.log(`发布任务 ${id}`);
     setEditTaskId(id);
+    setPublishDialogTitle("发布任务");
     publishForm.current?.setOpen(true);
   };
 
@@ -180,9 +186,16 @@ export function TaskListTable({ user }: { user: User }) {
       <TaskSubmissionDialog
         ref={form}
         taskId={editTaskId}
+        title={submitTaskDialogTitle}
         submitSuccessCallback={getTaskByPage}
       />
-      <TaskPublishDialog ref={publishForm} taskId={editTaskId} user={user} submitSuccessCallback={getTaskByPage}/>
+      <TaskPublishDialog
+        ref={publishForm}
+        taskId={editTaskId}
+        user={user}
+        title={publishDialogTitle}
+        submitSuccessCallback={getTaskByPage}
+      />
       <div className="mt-4"></div>
       <Table>
         <TableHeader>
@@ -233,13 +246,17 @@ export function TaskListTable({ user }: { user: User }) {
                   {new Date(task.created_at).toLocaleString()}
                 </TableCell>
                 <TableCell>
-                  {task.publish_date && new Date(task.publish_date).toLocaleString() || ''}
+                  {(task.publish_date &&
+                    new Date(task.publish_date).toLocaleString()) ||
+                    ""}
                 </TableCell>
                 <TableCell>
-                  {task.address && <AddressLink
-                    address={task.address}
-                    type="object"
-                  ></AddressLink>}
+                  {task.address && (
+                    <AddressLink
+                      address={task.address}
+                      type="object"
+                    ></AddressLink>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -251,16 +268,26 @@ export function TaskListTable({ user }: { user: User }) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>操作</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => handleEdit(task.id as unknown as string)}>
+                      <DropdownMenuItem
+                        onClick={() => handleEdit(task.id as unknown as string)}
+                      >
                         <Pencil className="mr-2 h-4 w-4" />
                         <span>编辑</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleWithdraw(task.id as unknown as string)}>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          handleWithdraw(task.id as unknown as string)
+                        }
+                      >
                         <Bitcoin className="mr-2 h-4 w-4" />
                         <span>提现</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handlePublish(task.id as unknown as string)}>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          handlePublish(task.id as unknown as string)
+                        }
+                      >
                         <Send className="mr-2 h-4 w-4" />
                         <span>发布</span>
                       </DropdownMenuItem>

@@ -34,10 +34,10 @@ import { Task } from "@/types/task";
 const SUI_MIST = 1000000000;
 
 const formSchema = z.object({
-  name: z.string().min(2, {
-    message: "任务名称至少需要2个字符。",
+  name: z.string().min(5, {
+    message: "任务名称至少需要5个字符。",
   }),
-  desc: z.string().min(1, {
+  desc: z.string().min(10, {
     message: "任务描述至少需要10个字符。",
   }),
   reward_method: z.number(),
@@ -46,10 +46,6 @@ const formSchema = z.object({
   claim_limit: z.number().int().min(1, {
     message: "至少发放1个奖励。",
   }),
-  // dateRange: z.object({
-  //   from: z.date(),
-  //   to: z.date(),
-  // }),
   end_date: z.date(),
   // .refine(
   //   (date) => {
@@ -117,8 +113,8 @@ const TaskSubmissionForm = (
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "test",
-      desc: "test desc",
+      name: "",
+      desc: "",
       reward_method: 1,
       claim_limit: 1,
       one_pass_reward: 1,
@@ -133,7 +129,6 @@ const TaskSubmissionForm = (
   });
 
   const resetForm = () => {
-    debugger
     form.reset();
     setPreviews([]);
   }
@@ -186,7 +181,6 @@ const TaskSubmissionForm = (
       );
 
       let response = null;
-      debugger
       if (task) {
         if (previews.some((pUrl) => task.attachments?.indexOf(pUrl) === -1)) {
           values.attachment.forEach((file, index) => {
@@ -453,7 +447,7 @@ const TaskSubmissionForm = (
                       }}
                       {...rest}
                     />
-                    {previews.length > 0 && (
+                    {previews && previews.length > 0 && (
                       <div className="grid grid-cols-3 gap-4">
                         {previews.map((preview, index) => (
                           <div key={index} className="relative">

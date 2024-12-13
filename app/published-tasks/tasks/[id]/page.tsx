@@ -9,6 +9,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Task } from "@/types/task";
 import TaskClaimForm from "@/components/TaskClaimForm";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,10 @@ export default async function Index({ params }: { params: { id: string } }) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(`/login?next=/published-tasks/tasks/${params.id}`)
+  }
 
   const { data: tasks } = await supabase
     .from("tasks")

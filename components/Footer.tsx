@@ -61,7 +61,7 @@ export default function Footer() {
           </svg>
         </Link> */}
         <Link
-          href="https://github.com/leap-ai/headshots-starter"
+          href="https://github.com/billaGitHub2016/sui-zealy"
           className="group"
           aria-label="GitHub"
           target="_blank"
