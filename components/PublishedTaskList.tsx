@@ -172,11 +172,11 @@ export default function PublishedTaskList() {
                     variant={(tag.variant as any) || "outline"}
                     className={`${
                       tag.value === "hasRecordPass"
-                        ? "bg-yellow-100 hover:bg-yellow-100"
+                        ? "bg-yellow-200 hover:bg-yellow-200 text-stone-950"
                         : ""
                     }${
                       tag.value === "canBeWithdraw"
-                        ? "bg-red-100 hover:bg-red-100"
+                        ? "bg-red-200 hover:bg-red-200"
                         : ""
                     }`}
                   >

@@ -6,9 +6,10 @@ import "../styles/loading.css";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { Providers } from "@/components/providers/sui-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 
 export const metadata = {
-  title: "Headshots AI",
+  title: "SUI-Zealy",
   description: "Generate awesome headshots in minutes using AI",
 };
 
@@ -26,8 +27,15 @@ export default function RootLayout({ children }: any) {
               <Navbar />
             </Suspense>
           </section>
-          <main className="flex flex-1 flex-col items-center py-16">
-            {children}
+          <main className="flex flex-1 flex-col items-center py-9">
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+            </ThemeProvider>
           </main>
           <Footer />
           <Toaster />

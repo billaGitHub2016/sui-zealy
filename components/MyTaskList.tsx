@@ -34,7 +34,7 @@ import { Task } from "@/types/task";
 import TaskSubmissionDialog from "@/components/TaskSubmissionDialog";
 import TaskPublishDialog from "@/components/TaskPublishDialog";
 import SimpleAlert from "@/components/simple-alert";
-import { SUI_MIST, STATUS_MAP, Two_Hours_Ms } from "@/config/constants";
+import { SUI_MIST, STATUS_MAP, Two_Hours_Ms, Draft } from "@/config/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "@supabase/supabase-js";
 import AddressLink from "./address-link";
@@ -112,6 +112,14 @@ export function TaskListTable({ user }: { user: User }) {
   };
 
   const handleEdit = (id: string) => {
+    const editTask = tasks.find(item => item.id === parseInt(id))
+    if (editTask?.status !== Draft) {
+      toast({
+        title: "校验失败",
+        description: "任务不是草稿状态，不能编辑",
+      });
+      return;
+    }
     console.log(`编辑任务 ${id}`);
     setEditTaskId(id);
     if (form.current) {
@@ -126,6 +134,14 @@ export function TaskListTable({ user }: { user: User }) {
   };
 
   const handlePublish = (id: string) => {
+    const editTask = tasks.find(item => item.id === parseInt(id))
+    if (editTask?.status !== Draft) {
+      toast({
+        title: "校验失败",
+        description: "任务不是草稿状态，不能发布",
+      });
+      return;
+    }
     console.log(`发布任务 ${id}`);
     setEditTaskId(id);
     publishForm.current?.setOpen(true);
@@ -166,7 +182,7 @@ export function TaskListTable({ user }: { user: User }) {
         taskId={editTaskId}
         submitSuccessCallback={getTaskByPage}
       />
-      <TaskPublishDialog ref={publishForm} taskId={editTaskId} user={user}/>
+      <TaskPublishDialog ref={publishForm} taskId={editTaskId} user={user} submitSuccessCallback={getTaskByPage}/>
       <div className="mt-4"></div>
       <Table>
         <TableHeader>

@@ -40,8 +40,8 @@ export const Login = ({
       setTimeout(() => {
         setIsSubmitting(false);
         toast({
-          title: "Email sent",
-          description: "Check your inbox for a magic link to sign in.",
+          title: "邮件已发送",
+          description: "请查看收件箱的 magic link 邮件并登录",
           duration: 5000,
         });
         setIsMagicLinkSent(true);
@@ -49,10 +49,10 @@ export const Login = ({
     } catch (error) {
       setIsSubmitting(false);
       toast({
-        title: "Something went wrong",
+        title: "服务器异常",
         variant: "destructive",
         description:
-          "Please try again, if the problem persists, contact us at hello@tryleap.ai",
+          "请稍后再试，如果问题仍然存在，请联系我们",
         duration: 5000,
       });
     }
@@ -130,10 +130,10 @@ export const Login = ({
                     validate: {
                       emailIsValid: (value: string) =>
                         /^[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value) ||
-                        "Please enter a valid email",
+                        "请输入有效的邮箱地址",
                       emailDoesntHavePlus: (value: string) =>
                         /^[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value) ||
-                        "Email addresses with a '+' are not allowed",
+                        "邮箱地址不允许带有 '+' 字符",
                       emailIsntDisposable: (value: string) =>
                         !disposableDomains.includes(value.split("@")[1]) ||
                         "Please use a permanent email address",
@@ -142,7 +142,7 @@ export const Login = ({
                 />
                 {isSubmitted && errors.email && (
                   <span className={"text-xs text-red-400"}>
-                    {errors.email?.message || "Email is required to sign in"}
+                    {errors.email?.message || "请输入邮箱地址"}
                   </span>
                 )}
               </div>

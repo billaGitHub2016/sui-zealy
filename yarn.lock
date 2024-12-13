@@ -3109,6 +3109,11 @@ next-multipart@^0.5.1:
   dependencies:
     formidable "^2.0.1"
 
+next-themes@^0.4.4:
+  version "0.4.4"
+  resolved "http://npm.midea.com:8090/repository/npm-public/next-themes/-/next-themes-0.4.4.tgz#ce6f68a4af543821bbc4755b59c0d3ced55c2d13"
+  integrity sha512-LDQ2qIOJF0VnuVrrMSMLrWGjRMkq+0mpgl6e0juCLqdJ+oo8Q84JRWT6Wh11VDQKkMMe+dVzDKLWs5n87T+PkQ==
+
 next@^14.1.4:
   version "14.2.18"
   resolved "https://registry.npmmirror.com/next/-/next-14.2.18.tgz#1750bc0c3dda644d48be530d1b0e71ad92025cf8"

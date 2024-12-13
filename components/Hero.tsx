@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { LineText } from "./LineText";
 import { Button } from "@/components/ui/button";
 
@@ -26,13 +27,17 @@ const Hero = () => {
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-2xl tracking-tight text-slate-700 dark:text-slate-400">
           {/* {siteConfig.description} */}
-          一个免费的，去中心化的，任务发布和接单平台。欢迎发布各种小任务，如跑腿、代购、代写等，也可以在这里完成任务并申请奖励。
+          一个免费的，去中心化的，任务发布和接单平台。欢迎发布各种小任务，也可以在这里完成任务并申请奖励。
         </p>
       </section>
       {/* </motion.div> */}
       <div>
-        <Button>发布任务</Button>
-        <Button>看看有啥任务</Button>
+        <Link href="/overview">
+          <Button className="mr-4" size={"lg"}>发布任务</Button>
+        </Link>
+        <Link href="/published-tasks">
+          <Button className="" size={"lg"}>看看有啥任务</Button>
+        </Link>
       </div>
     </>
   );

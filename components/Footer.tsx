@@ -4,21 +4,22 @@ export default function Footer() {
   return (
     <footer className="text-center px-4 lg:px-40 py-4 h-12 sm:h-20 w-full sm:pt-2 pt-4 border-t mt-5 flex sm:flex-row flex-col justify-between items-center space-y-3 sm:mb-0 mb-3 border-gray-200">
       <div className="text-gray-500">
-        <Link
+        {/* <Link
           className="text-blue-600 hover:underline font-bold"
           href="https://github.com/leap-ai/headshots-starter"
           target="_blank"
         >
           Open-source
-        </Link>{" "}
+        </Link>{" "} */}
+        开源项目
         powered by{" "}
-        <Link
+        {/* <Link
           className="text-blue-600 hover:underline font-bold"
           href="https://www.astria.ai/"
           target="_blank"
         >
           Astria,{" "}
-        </Link>
+        </Link> */}
         <Link
           className="text-blue-600 hover:underline font-bold"
           href="https://supabase.com/"
@@ -46,7 +47,7 @@ export default function Footer() {
         )}
       </div>
       <div className="flex space-x-4 pb-4 sm:pb-0">
-        <Link
+        {/* <Link
           href="https://twitter.com/Astria_AI"
           className="group"
           aria-label="Twitter"
@@ -58,7 +59,7 @@ export default function Footer() {
           >
             <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0 0 22 5.92a8.19 8.19 0 0 1-2.357.646 4.118 4.118 0 0 0 1.804-2.27 8.224 8.224 0 0 1-2.605.996 4.107 4.107 0 0 0-6.993 3.743 11.65 11.65 0 0 1-8.457-4.287 4.106 4.106 0 0 0 1.27 5.477A4.073 4.073 0 0 1 2.8 9.713v.052a4.105 4.105 0 0 0 3.292 4.022 4.093 4.093 0 0 1-1.853.07 4.108 4.108 0 0 0 3.834 2.85A8.233 8.233 0 0 1 2 18.407a11.615 11.615 0 0 0 6.29 1.84" />
           </svg>
-        </Link>
+        </Link> */}
         <Link
           href="https://github.com/leap-ai/headshots-starter"
           className="group"

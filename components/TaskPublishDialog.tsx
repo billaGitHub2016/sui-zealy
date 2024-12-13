@@ -39,10 +39,12 @@ const TaskPublishDialog = (
     taskId,
     title = "发布任务",
     user,
+    submitSuccessCallback,
   }: {
     taskId?: string;
     title?: string;
     user: User | null;
+    submitSuccessCallback: () => void;
   },
   ref: Ref<{
     setOpen: Function;
@@ -52,7 +54,10 @@ const TaskPublishDialog = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(false);
-  const taskDetail = useRef<{ handlePublish: () => Promise<"">, handleWithdraw: () => Promise<""> }>(null);
+  const taskDetail = useRef<{
+    handlePublish: () => Promise<"">;
+    handleWithdraw: () => Promise<"">;
+  }>(null);
   const [openAlert, setOpenAlert] = useState(false);
   const [operation, setOperation] = useState("");
   const [alertTips, setAlertTips] = useState("");
@@ -85,7 +90,11 @@ const TaskPublishDialog = (
         setIsSubmitting(true);
         taskDetail.current
           .handlePublish()
-          .catch(() => { })
+          .then(() => {
+            setOpen(false);
+            submitSuccessCallback && submitSuccessCallback();
+          })
+          .catch(() => {})
           .finally(() => {
             setIsSubmitting(false);
           });
@@ -95,7 +104,11 @@ const TaskPublishDialog = (
         setIsSubmitting(true);
         taskDetail.current
           .handleWithdraw()
-          .catch(() => { })
+          .then(() => {
+            setOpen(false);
+            submitSuccessCallback && submitSuccessCallback();
+          })
+          .catch(() => {})
           .finally(() => {
             setIsSubmitting(false);
           });
