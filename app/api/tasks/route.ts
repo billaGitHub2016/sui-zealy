@@ -11,7 +11,6 @@ export async function PUT(request: Request) {
     const reward_method = formData.get("reward_method") as string
     const claim_limit = formData.get("claim_limit") as string
     const pool = formData.get("pool") as string
-    const start_date = formData.get("start_date") as string
     const end_date = formData.get("end_date") as string
     const attachments: File[] = []
 
@@ -65,7 +64,7 @@ export async function PUT(request: Request) {
             const { data, error } = await supabase
                 .from('tasks')
                 .insert([
-                    { name, desc, reward_method, claim_limit, pool, start_date, end_date, status: 0, user_id: user.id, attachments: attachmentUrls },
+                    { name, desc, reward_method, claim_limit, pool, end_date, status: 0, user_id: user.id, attachments: attachmentUrls },
                 ])
                 .select()
             if (error) {

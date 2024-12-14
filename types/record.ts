@@ -11,4 +11,6 @@ export type Record = {
     comment: string | null
     record_address: string | null
     reward_digest: string | null
+    is_winner: boolean
+    raffle_date: string | null
 }

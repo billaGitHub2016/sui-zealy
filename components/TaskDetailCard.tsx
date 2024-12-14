@@ -26,7 +26,7 @@ import { Transaction } from "@mysten/sui/transactions";
 import { MIST_PER_SUI } from "@mysten/sui/utils";
 import { toast } from "@/components/ui/use-toast";
 import { User } from "@supabase/supabase-js";
-
+import { Record } from "@/types/record";
 interface TaskDetailProps {
   taskName: string;
   description: string;
@@ -34,15 +34,6 @@ interface TaskDetailProps {
 }
 
 export async function updateTask(updateTask: Partial<Task>): Promise<Task> {
-  // const formData = new FormData();
-  // type TaskFields = keyof Task;
-  // for (const key in updateTask) {
-  //   if (Object.prototype.hasOwnProperty.call(updateTask, key)) {
-  //     const element = updateTask[key as TaskFields];
-  //     formData.append(key, element as string);
-  //   }
-  // }
-
   const response = await fetch(`/api/publishedTasks`, {
     method: "PUT",
     body: JSON.stringify(updateTask),
@@ -55,6 +46,20 @@ export async function updateTask(updateTask: Partial<Task>): Promise<Task> {
   }
   const result = await response.json();
   return result.data;
+}
+
+export async function updateWinnerRecord(winnerRecord: any): Promise<Task> {
+  const response = await fetch(`/api/raffle`, {
+    method: "PUT",
+    body: JSON.stringify(winnerRecord),
+    headers: {
+      "Content-Type": "application/json",
+    }
+  });
+  if (!response.ok) {
+    throw new Error("更新中奖记录失败");
+  }
+  return await response.json();
 }
 
 function TaskDetailCard(
@@ -75,7 +80,8 @@ function TaskDetailCard(
 
   useImperativeHandle(ref, () => ({
     handlePublish,
-    handleWithdraw
+    handleWithdraw,
+    handleRaffle
   }));
 
   const DetailItem = ({
@@ -149,7 +155,6 @@ function TaskDetailCard(
         typeArguments: [],
       });
 
-      debugger
       setLoading(true);
       signAndExecute(
         {
@@ -158,7 +163,6 @@ function TaskDetailCard(
         {
           onSuccess: async (data) => {
             console.log("transaction digest: " + JSON.stringify(data));
-            debugger;
             if (
               ((data.effects &&
                 data.effects.status.status) as unknown as string) === "success"
@@ -263,7 +267,6 @@ function TaskDetailCard(
         {
           onSuccess: async (data) => {
             console.log("withdraw digest: " + JSON.stringify(data));
-            debugger;
             if (
               ((data.effects &&
                 data.effects.status.status) as unknown as string) === "success"
@@ -305,6 +308,107 @@ function TaskDetailCard(
             toast({
               title: "提现失败",
               description: `链上数据提现失败:${err.message}，请稍后再试`,
+              variant: "destructive",
+            });
+            setLoading(false);
+            reject(err);
+          },
+        }
+      );
+    });
+  };
+
+  const handleRaffle = () => {
+    if (!task) {
+      return Promise.reject();
+    }
+    if (!account) {
+      toast({
+        title: "校验失败",
+        description: "请先连接钱包",
+        variant: "destructive",
+      });
+      return Promise.reject();
+    }
+    return new Promise((resolve, reject) => {
+      const txb = new Transaction();
+
+      txb.setGasBudget(100000000);
+      txb.moveCall({
+        target: `${process.env.NEXT_PUBLIC_PACKAGE_ID}::task::handle_task_raffle`,
+        arguments: [
+          txb.object(task.task_admin_cap_address as string),
+          txb.object(task.address as string),
+          txb.object("0x8"),
+          txb.object("0x6"),
+        ],
+        typeArguments: [],
+      });
+
+      setLoading(true);
+      signAndExecute(
+        {
+          transaction: txb,
+        },
+        {
+          onSuccess: async (data) => {
+            console.log("raffle: " + JSON.stringify(data));
+            if (
+              ((data.effects &&
+                data.effects.status.status) as unknown as string) === "success"
+            ) {
+              toast({
+                title: "抽奖成功",
+                description: "抽奖成功，奖励已发放",
+              });
+              await updateTask({
+                id: task.id,
+                status: 2
+              })
+                .catch((err) => {
+                  toast({
+                    title: "提示",
+                    description: "更新任务信息失败",
+                    variant: "destructive",
+                  });
+                  reject(err);
+                })
+              
+                const events = data.events;
+                const rewardEvent = Array.isArray(events) && events.length > 0 ? events[0] : null;
+                if (rewardEvent) {
+                  await updateWinnerRecord({
+                    winnerRecord: {
+                      reward_digest: data.digest,
+                      task_address: (rewardEvent.parsedJson as any).task_id,
+                      record_address: (rewardEvent.parsedJson as any).record_id
+                    }
+                  }).catch((err) => {
+                    toast({
+                      title: "提示",
+                      description: "更新申请信息失败",
+                      variant: "destructive",
+                    });
+                    reject(err);
+                  })
+                }
+              resolve('')
+              setLoading(false);
+            } else {
+              toast({
+                title: "抽奖失败",
+                description: "链上任务抽奖失败，请稍后再试",
+                variant: "destructive",
+              });
+              setLoading(false);
+              reject(new Error("抽奖失败"));
+            }
+          },
+          onError: (err) => {
+            console.log("transaction error: " + err);
+            toast({
+              title: "抽奖失败",
+              description: `链上任务抽奖失败:${err.message}，请稍后再试`,
               variant: "destructive",
             });
             setLoading(false);
@@ -376,8 +480,8 @@ function TaskDetailCard(
                   label="单个申请奖励金额"
                   value={
                     (task.pool as number) /
-                      SUI_MIST /
-                      (task.claim_limit as number) +
+                    SUI_MIST /
+                    (task.claim_limit as number) +
                     "SUI"
                   }
                 />
@@ -390,7 +494,7 @@ function TaskDetailCard(
               />
               <DetailItem
                 label="任务发布日期"
-                value={ (task.start_date && new Date(task.start_date as string).toLocaleString()) || "未发布" }
+                value={(task.publish_date && new Date(task.publish_date as string).toLocaleString()) || "未发布"}
               />
               <DetailItem
                 label="任务结束日期"

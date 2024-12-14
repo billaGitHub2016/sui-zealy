@@ -34,7 +34,7 @@ import { Task } from "@/types/task";
 import TaskSubmissionDialog from "@/components/TaskSubmissionDialog";
 import TaskPublishDialog from "@/components/TaskPublishDialog";
 import SimpleAlert from "@/components/simple-alert";
-import { SUI_MIST, STATUS_MAP, Two_Hours_Ms, Draft } from "@/config/constants";
+import { SUI_MIST, STATUS_MAP, Two_Hours_Ms, Draft, Published } from "@/config/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "@supabase/supabase-js";
 import AddressLink from "./address-link";
@@ -153,6 +153,20 @@ export function TaskListTable({ user }: { user: User }) {
     publishForm.current?.setOpen(true);
   };
 
+  const handleRaffle = (id: string) => {
+    const editTask = tasks.find((item) => item.id === parseInt(id));
+    if (editTask?.status !== Published) {
+      toast({
+        title: "校验失败",
+        description: "任务不是发布状态，不能抽奖",
+      });
+      return;
+    }
+    setEditTaskId(id);
+    setPublishDialogTitle("抽奖");
+    publishForm.current?.setOpen(true);
+  }
+
   const onConfirm = () => {
     if (operation === "delete") {
       setIsLoading(true);
@@ -234,8 +248,8 @@ export function TaskListTable({ user }: { user: User }) {
                       task.status == 0
                         ? "outline"
                         : task.status == 1
-                        ? "default"
-                        : "secondary"
+                          ? "default"
+                          : "secondary"
                     }
                   >
                     {STATUS_MAP[task.status as 0 | 1 | 2]}
@@ -274,6 +288,7 @@ export function TaskListTable({ user }: { user: User }) {
                         <Pencil className="mr-2 h-4 w-4" />
                         <span>编辑</span>
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() =>
                           handleWithdraw(task.id as unknown as string)
@@ -282,7 +297,6 @@ export function TaskListTable({ user }: { user: User }) {
                         <Bitcoin className="mr-2 h-4 w-4" />
                         <span>提现</span>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() =>
                           handlePublish(task.id as unknown as string)
@@ -291,6 +305,14 @@ export function TaskListTable({ user }: { user: User }) {
                         <Send className="mr-2 h-4 w-4" />
                         <span>发布</span>
                       </DropdownMenuItem>
+                      {task.reward_method === 2 && (<DropdownMenuItem
+                        onClick={() =>
+                          handleRaffle(task.id as unknown as string)
+                        }
+                      >
+                        <Send className="mr-2 h-4 w-4" />
+                        <span>抽奖</span>
+                      </DropdownMenuItem>)}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

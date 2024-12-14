@@ -13,12 +13,9 @@ import Link from "next/link";
 import { Button } from "./ui/button";
 import React from "react";
 import { Database } from "@/types/supabase";
+import { ThemedButton } from "./ThemedButton";
 
 export const dynamic = "force-dynamic";
-
-const stripeIsConfigured = process.env.NEXT_PUBLIC_STRIPE_IS_ENABLED === "true";
-
-const packsIsEnabled = process.env.NEXT_PUBLIC_TUNE_TYPE === "packs";
 
 export const revalidate = 0;
 
@@ -51,7 +48,8 @@ export default async function Navbar() {
           </Link>
         </div>
       </div>
-      <div className="flex gap-4 lg:ml-auto">
+      <div className="flex gap-4 lg:ml-auto items-center">
+        <ThemedButton></ThemedButton>
         {!user && (
           <Link href="/login">
             <Button variant={"ghost"}>登录 / 注册</Button>

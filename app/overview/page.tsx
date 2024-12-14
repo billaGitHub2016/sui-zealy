@@ -13,7 +13,17 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default async function Index() {
+const TabMap = {
+  '1': "myTask",
+  '2': "myApply",
+  '3': "myReview",
+}
+
+export default async function Index({
+  searchParams,
+}: {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}) {
   const supabase = createServerComponentClient<Database>({ cookies });
 
   const {
@@ -24,9 +34,10 @@ export default async function Index() {
     redirect('/login?next=/overview')
   }
 
+  const defaultTab = TabMap[searchParams?.t as '1' | '2' | '3'] || "myTask"
   return (
     <div className="container w-full px-4 py-8">
-      <Tabs defaultValue="myTask" className="w-full">
+      <Tabs defaultValue={ defaultTab} orientation="horizontal">
         <TabsList>
           <TabsTrigger value="myTask">我的任务</TabsTrigger>
           <TabsTrigger value="myApply">我的申请</TabsTrigger>

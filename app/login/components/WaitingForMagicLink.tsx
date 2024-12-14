@@ -10,7 +10,7 @@ export const WaitingForMagicLink = ({
     <>
       <div className="flex items-center justify-center p-8">
         <div className="flex flex-col gap-4 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 p-4 rounded-xl max-w-sm w-full">
-          <h1 className="text-xl">Check your email to continue</h1>
+          <h1 className="text-xl">请查看您的邮箱</h1>
           <div className="flex flex-col gap-2">
             <p className="text-sm">
               我们已经发送了一封带有magic link的电子邮件到您的邮箱。

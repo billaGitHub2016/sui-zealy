@@ -3,6 +3,7 @@ import { join } from "path";
 import { writeFile } from "fs/promises";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { Record } from "@/types/record";
 
 export async function POST(request: Request) {
     try {

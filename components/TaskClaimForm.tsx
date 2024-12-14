@@ -38,8 +38,7 @@ import {
   useSuiClient,
 } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
-
-const SUI_MIST = 1000000000;
+import { useRouter } from 'next/navigation'
 
 const formSchema = z.object({
   desc: z.string().min(1, {
@@ -64,13 +63,14 @@ const TaskClaimForm = (
 ) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previews, setPreviews] = useState<string[]>([]);
+  const router = useRouter()
 
   useImperativeHandle(ref, () => ({
     onSubmit,
   }));
 
   useEffect(() => {
-    
+
   }, [task]);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -96,10 +96,6 @@ const TaskClaimForm = (
         },
       }),
   });
-
-  const addRecord = async (values: any) => {
-    
-  }
 
   async function onSubmit() {
     if (!task) {
@@ -178,34 +174,38 @@ const TaskClaimForm = (
                 ((data.effects &&
                   data.effects.status.status) as unknown as string) === "success"
               ) {
-                let record_address =
-                  data.effects?.created && Array.isArray(data.effects.created) && (data.effects.created?.length > 0) && (data.effects.created[0].reference as any).objectId
-  
-                  const formData = new FormData();
-                  formData.append("desc", values.desc);
-                  values.attachments.forEach((file: File, index: number) => {
-                    formData.append(`attachments${index}`, file);
-                  });
-                  formData.append("wallet_address", account.address);
-                  formData.append("task_id", task?.id as unknown as string);
-                  formData.append("record_address", record_address as string);
-            
-                  const response = await fetch("/api/claimTask", {
-                    method: "PUT",
-                    body: formData,
-                  });
-            
-                  if (!response.ok) {
-                    const res = await response.json();
-                    reject(new Error(res.message));
-                  }
+                // let record_address =
+                //   data.effects?.created && Array.isArray(data.effects.created) && (data.effects.created?.length > 1) && (data.effects.created[1].reference as any).objectId
+                const rewardEvent = Array.isArray(data.events) && data.events.length > 0 ? data.events[0] : null;
+                let record_address = ((rewardEvent?.parsedJson) as any).record_id
+                  
+                const formData = new FormData();
+                formData.append("desc", values.desc);
+                values.attachments.forEach((file: File, index: number) => {
+                  formData.append(`attachments${index}`, file);
+                });
+                formData.append("wallet_address", account.address);
+                formData.append("task_id", task?.id as unknown as string);
+                formData.append("record_address", record_address as string);
 
-                  resolve('');
-            
-                  toast({
-                    title: "申请提交成功",
-                    description: "您的申请已提交，请耐心等待审核结果。",
-                  });
+                const response = await fetch("/api/claimTask", {
+                  method: "PUT",
+                  body: formData,
+                });
+
+                if (!response.ok) {
+                  const res = await response.json();
+                  reject(new Error(res.message));
+                }
+
+                resolve('');
+
+                router.push('/overview?t=2')
+
+                toast({
+                  title: "申请提交成功",
+                  description: "您的申请已提交，请耐心等待审核结果。",
+                });
               } else {
                 toast({
                   title: "发布失败",

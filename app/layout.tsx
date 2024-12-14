@@ -18,27 +18,27 @@ export default function RootLayout({ children }: any) {
     <html lang="en">
       <Providers>
         <body className="min-h-screen flex flex-col">
-          <section>
-            <Suspense
-              fallback={
-                <div className="flex w-full px-4 lg:px-40 py-4 items-center border-b text-center gap-8 justify-between h-[69px]" />
-              }
-            >
-              <Navbar />
-            </Suspense>
-          </section>
-          <main className="flex flex-1 flex-col items-center py-9">
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="dark"
-              enableSystem
-              disableTransitionOnChange
-            >
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <section>
+              <Suspense
+                fallback={
+                  <div className="flex w-full px-4 lg:px-40 py-4 items-center border-b text-center gap-8 justify-between h-[69px]" />
+                }
+              >
+                <Navbar />
+              </Suspense>
+            </section>
+            <main className="flex flex-1 flex-col items-center py-9">
               {children}
-            </ThemeProvider>
-          </main>
-          <Footer />
-          <Toaster />
+            </main>
+            <Footer />
+            <Toaster />
+          </ThemeProvider>
           <Analytics />
         </body>
       </Providers>

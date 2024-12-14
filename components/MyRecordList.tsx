@@ -131,7 +131,19 @@ export function RecordListTable({ user }: { user: any }) {
           ) : (
             records.map((record) => (
               <TableRow key={record.id}>
-                <TableCell>{record.desc}</TableCell>
+                <TableCell className="relative">
+                  {record.desc}
+                  {record.raffle_date && <Badge
+                    variant="default"
+                    className={`${
+                      record.is_winner && record.raffle_date
+                        ? "bg-yellow-200 hover:bg-yellow-200 text-stone-950"
+                        : ""
+                    }`}
+                  >
+                    { record.is_winner ? '中奖' : '未中奖' }
+                  </Badge>}
+                </TableCell>
                 <TableCell>
                   {record?.attachments?.map((image, index) => (
                     <div

@@ -20,8 +20,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
             .select('id', { count: 'exact' })
             .eq('task_id', id)
             .eq('result', 1)
+        
+        const { count: notCheckRecordCount, error: notCheckRecordCountError } = await supabase.from('records')
+            .select('id', { count: 'exact' })
+            .eq('task_id', id)
+            .eq('result', 0)
 
-        if (error || passRecordCountError) {
+        if (error || passRecordCountError || notCheckRecordCountError) {
             throw error
         }
 
@@ -29,6 +34,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         if (data.length === 1) {
             task = data[0]
             task.record_pass_count = passRecordCount
+            task.record_not_check_count = notCheckRecordCount
         }
 
         return NextResponse.json({ message: "ok", data: task }, { status: 200 })
@@ -85,7 +91,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         // console.log('reward_method = ', reward_method)
         const claim_limit = formData.get("claim_limit") as unknown as number
         const pool = formData.get("pool") as unknown as number
-        const start_date = formData.get("start_date") as string
         const end_date = formData.get("end_date") as string
         const status = formData.get("status") as unknown as number
         const attachments: File[] = []
@@ -118,7 +123,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             })
         )
 
-        const update: Partial<Task> = { name, desc, reward_method, claim_limit, pool, start_date, end_date }
+        const update: Partial<Task> = { name, desc, reward_method, claim_limit, pool, end_date }
         if (attachments.length > 0) {
             update.attachments = attachmentUrls as string[]
         }
