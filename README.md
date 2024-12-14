@@ -2,6 +2,22 @@
 
 类似zealy的任务发布平台，可以质押SUI作为任务奖励，完成任务后可以领取SUI。
 
+### 1. 填写环境变量:
+项目依赖supabase，请在`.env.local`文件中填写以下环境变量：
+
+```
+SUPABASE_URL=https://your-supabase-url.supabase.co
+SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_PUBLIC_KEY=your-supabase-public-key
+```
+
+### 2. 创建Supabase项目:
+在[Supabase](https://supabase.com/)上创建一个新项目，并获取以下信息：
+
+- Supabase URL
+- Supabase Anon Key
+- Supabase Public Key
+
 ### 1. Install dependencies:
 
 For npm:
