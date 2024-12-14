@@ -39,7 +39,7 @@ import { DateBefore } from "react-day-picker";
 import { Record } from "@/types/record";
 import { Task } from "@/types/task";
 import { User } from "@supabase/supabase-js";
-import { Pass, Fail, RESULT_MAP } from '@/config/constants'
+import { Pass, Fail, RESULT_MAP, Completed } from '@/config/constants'
 import { bcs, fromHEX, toHEX } from '@mysten/bcs';
 
 const formSchema = z.object({
@@ -191,6 +191,20 @@ const ReviewForm = (
                   method: "PUT",
                   body: formData,
                 });
+
+                const { claim_limit, record_pass_count } = task
+                if ((record_pass_count as number) + 1 >= (claim_limit as number)) {
+                  await fetch("/api/publishedTasks", {
+                    method: "PUT",
+                    body: JSON.stringify({
+                      id: task.id,
+                      status: Completed
+                    }),
+                    headers: {
+                      "Content-Type": "application/json",
+                    }
+                  });
+                }
 
                 if (!response.ok) {
                   const res = await response.json();

@@ -18,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Bitcoin, Send } from "lucide-react";
+import { MoreHorizontal, Pencil, Bitcoin, Send, Gift, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Pagination,
@@ -195,8 +195,17 @@ export function TaskListTable({ user }: { user: User }) {
   };
 
   return (
-    <div className="w-full">
-      <div className="mt-4"></div>
+    <div className="w-full relative">
+      <div className="absolute right-0 top-0">
+        <Button
+          variant={"outline"}
+          onClick={() => {
+            getTaskByPage();
+          }}
+        >
+          <RefreshCw /> 刷新
+        </Button>
+      </div>
       <TaskSubmissionDialog
         ref={form}
         taskId={editTaskId}
@@ -310,7 +319,7 @@ export function TaskListTable({ user }: { user: User }) {
                           handleRaffle(task.id as unknown as string)
                         }
                       >
-                        <Send className="mr-2 h-4 w-4" />
+                        <Gift className="mr-2 h-4 w-4" />
                         <span>抽奖</span>
                       </DropdownMenuItem>)}
                     </DropdownMenuContent>
