@@ -22,7 +22,7 @@ import {
 import { Task } from "@/types/task";
 import Link from "next/link";
 import AddressLink from "@/components/address-link";
-import { SUI_MIST, Two_Hours_Ms } from "@/config/constants";
+import { REWARD_METHODS, SUI_MIST, Two_Hours_Ms } from "@/config/constants";
 import { MIST_PER_SUI } from "@mysten/sui/dist/cjs/utils";
 import { Skeleton } from "./ui/skeleton";
 
@@ -136,7 +136,7 @@ export default function PublishedTaskList() {
               if (
                 item.publish_date &&
                 new Date().getTime() - new Date(item.publish_date).getTime() <
-                  Two_Hours_Ms
+                Two_Hours_Ms
               ) {
                 tags.push({
                   label: "犹豫期内",
@@ -162,7 +162,7 @@ export default function PublishedTaskList() {
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {isLoading ? (<TaskListSkeleton/>) : (tasks.map((task) => (
+        {isLoading ? (<TaskListSkeleton />) : (tasks.map((task) => (
           <Card key={task.id} className="flex flex-col transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-blue-100/50 hover:-translate-y-1">
             <CardHeader className="pb-3">
               <div className="flex flex-wrap gap-2 mb-3">
@@ -170,15 +170,13 @@ export default function PublishedTaskList() {
                   <Badge
                     key={index}
                     variant={(tag.variant as any) || "outline"}
-                    className={`${
-                      tag.value === "hasRecordPass"
+                    className={`${tag.value === "hasRecordPass"
                         ? "bg-yellow-200 hover:bg-yellow-200 text-stone-950"
                         : ""
-                    }${
-                      tag.value === "canBeWithdraw"
+                      }${tag.value === "canBeWithdraw"
                         ? "bg-red-200 hover:bg-red-200"
                         : ""
-                    }`}
+                      }`}
                   >
                     {tag.label}
                   </Badge>
@@ -192,6 +190,9 @@ export default function PublishedTaskList() {
               <p className="text-sm text-gray-600">奖池: {(task.pool as number) / SUI_MIST} SUI</p>
               <p className="text-sm text-gray-600 mt-1">
                 已通过申请数/总数: {task.record_pass_count} / {task.claim_limit}
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                {REWARD_METHODS[(task.reward_method as 1 | 2)]}
               </p>
             </CardContent>
             <CardFooter className="flex flex-col items-start pt-3 border-t">

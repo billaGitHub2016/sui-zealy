@@ -137,8 +137,10 @@ const TaskSubmissionForm = (
   const claimLimit = form.watch("claim_limit");
   const rewardMethod = form.watch("reward_method");
   useEffect(() => {
-    form.setValue("pool", claimLimit * onePassReward);
-  }, [onePassReward, claimLimit, form]);
+    if (rewardMethod == 1) {
+      form.setValue("pool", claimLimit * onePassReward);
+    }
+  }, [onePassReward, claimLimit, form, ]);
 
   async function onSubmit() {
     setIsSubmitting(true);
